@@ -33,11 +33,7 @@ import tools.util.PathResolver.Environment
 
 case class GitException(Message : String, resultCode : Int) extends Exception
 
-case class Config(foo: Int = -1, bar: String = "", xyz: Boolean = false,
-                  libname: String = "", libfile: String = "", maxlibname: String = "",
-                  maxcount: Int = -1, whatnot: String = "")
-
-
+case class Config(inputDirectory: String = "")
 
 object CollectMetrics {
 
@@ -54,19 +50,10 @@ object CollectMetrics {
 
   def main(args : Array[String]){
 
-    println("Hello World")
-
-
     val parser = new scopt.immutable.OptionParser[Config]("scopt", "2.x") { def options = Seq(
-      intOpt("f", "foo", "foo is an integer property") { (v: Int, c: Config) => c.copy(foo = v) },
-      opt("o", "output", "output") { (v: String, c: Config) => c.copy(bar = v) },
-      booleanOpt("xyz", "xyz is a boolean property") { (v: Boolean, c: Config) => c.copy(xyz = v) },
-      keyValueOpt("l", "lib", "<libname>", "<filename>", "load library <libname>")
-      { (key: String, value: String, c: Config) => c.copy(libname = key, libfile = value) },
-      keyIntValueOpt(None, "max", "<libname>", "<max>", "maximum count for <libname>")
-      { (key: String, value: Int, c: Config) => c.copy(maxlibname = key, maxcount = value) },
-      arg("<file>", "some argument") { (v: String, c: Config) => c.copy(whatnot = v) }
+      opt("i", "input-dir", "inpit git repositary directory (local)") { (v: String, c: Config) => c.copy(inputDirectory = v) }
     ) }
+
     // parser.parse returns Option[C]
     parser.parse(args, Config()) map { config =>
       // do stuff
@@ -77,9 +64,6 @@ object CollectMetrics {
     try
     {
       git(List("--version"), (s : String) => println(s))
-
-
-
     }
     catch
     {
