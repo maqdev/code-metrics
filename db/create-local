@@ -1,0 +1,14 @@
+#! /usr/bin/env sh
+
+pg_host='localhost'
+pg_user='_postgres'
+pg_default_db='postgres'
+
+script_dir="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+function pg_run() {
+    psql --host=$pg_host --username=$pg_user --dbname=$pg_default_db --log-file=$script_dir/psql.log --quiet --file=$script_dir/$1
+}
+
+rm $script_dir/psql.log 2>/dev/null
+pg_run 'v/00-create-db.sql'

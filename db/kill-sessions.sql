@@ -1,0 +1,1 @@
+select pg_terminate_backend(a.procpid) from pg_stat_activity a where a.client_addr <> (select inet_client_addr());
