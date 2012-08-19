@@ -22,7 +22,7 @@
 -- ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 -- (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 
--- Author(s): Magomed Abdurakhmanov (maqdev@gmail.com)
+-- Author(s): Magomed Abdurakhmanov (maga@inn.eu)
 
 set client_min_messages='warning';
 
@@ -112,7 +112,7 @@ grant select on project to codemetrics_web;
 -- project file groups
 ----------------------------------------------------------------------------------------
 
-create table file_group
+create table file_group - file_type
 (
     file_group_id serial,
     project_id int not null,
@@ -188,10 +188,12 @@ create table commt
     hash varchar(120) not null,
     project_id int not null,
     author_id int not null,
+    commit_type smallint not null,
     dt timestamptz not null,
     constraint pk_commt primary key (commt_id),
     constraint fk_commt__project foreign key (project_id) references project(project_id),
-    constraint fk_commt__author foreign key (author_id) references author(author_id)
+    constraint fk_commt__author foreign key (author_id) references author(author_id),
+    constraint ck_commt__commit_type constraint check commit_type in (1 /*normal*/, 2 /*merge*/)
 );
 
 create unique index ix_commt_hash on commt(hash);
@@ -206,14 +208,18 @@ grant select on commt to codemetrics_web;
 
 create table metric_type
 (
-    metric_type_id smallint not null,
+    metric_type_id serial not null,
     name varchar(120) not null,
     constraint pk_metric_type primary key (metric_type_id)
 );
 
+create unique index ix_metric_type on metric(name);
+
 grant select,insert,update,delete on metric_type to codemetrics_admin;
 grant select on metric_type to codemetrics;
 grant select on metric_type to codemetrics_web;
+
+--insert into metric_type values (1, "new code line")
 
 ----------------------------------------------------------------------------------------
 -- metric
@@ -222,7 +228,7 @@ grant select on metric_type to codemetrics_web;
 create table metric
 (
     commt_id bigint not null,
-    metric_type_id smallint not null,
+    metric_type_id int not null,
     value int not null,
     constraint fk_metric__commt foreign key (commt_id) references commt(commt_id),
     constraint fk_metric__metric_type foreign key (metric_type_id) references metric_type(metric_type_id)

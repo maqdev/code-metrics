@@ -25,49 +25,43 @@
  */
 
 /*
- * Author(s): Magomed Abdurakhmanov (maqdev@gmail.com)
+ * Author(s):
+ *  Magomed Abdurakhmanov (maga@inn.eu)
  */
 
+package eu.inn.metrics
+
 import sys.process.{ProcessLogger, Process}
-import tools.util.PathResolver.Environment
-
-case class GitException(Message : String, resultCode : Int) extends Exception
-
-case class Config(inputDirectory: String = "")
 
 object CollectMetrics {
 
-  def git(args : Seq[String], f : String => Unit) : Unit = {
+  def main(args: Array[String]) {
+    try {
+      val parser = new scopt.immutable.OptionParser[CollectMetricsConfig]("collect", "0.0") {
+        def options = Seq(
+          opt("i", "input-dir", "inpit git repositary directory (local)") {
+            (v: String, c: CollectMetricsConfig) => c.copy(inputDirectory = v)
+          }
+        )
+      }
 
-    var errorLines : String = ""
-    val pl = ProcessLogger(f, error => errorLines += error + sys.props("line.separator"))
+      // parser.parse returns Option[C]
+      parser.parse(args, CollectMetricsConfig()) map {
+        config =>
 
-    val result = Process("git", args).!(pl)
-
-    if (!errorLines.isEmpty || result != 0)
-      throw GitException(errorLines, result)
-  }
-
-  def main(args : Array[String]){
-
-    val parser = new scopt.immutable.OptionParser[Config]("scopt", "2.x") { def options = Seq(
-      opt("i", "input-dir", "inpit git repositary directory (local)") { (v: String, c: Config) => c.copy(inputDirectory = v) }
-    ) }
-
-    // parser.parse returns Option[C]
-    parser.parse(args, Config()) map { config =>
-      // do stuff
-    } getOrElse {
-      // arguments are bad, usage message will have been displayed
+          if (config.inputDirectory.isEmpty()) {
+            parser.toString()
+          }
+          else {
+            val o = new StdOutputHandler()
+            val r = new ProcessRepositary(config, o)
+            r.run()
+          }
+      } getOrElse {
+      }
     }
-
-    try
-    {
-      git(List("--version"), (s : String) => println(s))
-    }
-    catch
-    {
-      case e => println("Failed with exception:" + e)
+    catch {
+      case e => e.printStackTrace
     }
   }
 }
