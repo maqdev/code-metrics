@@ -31,35 +31,40 @@
 
 package eu.inn.metrics
 
-import scala.Console._
 
-class ClocDiffHandler (clocPath : String, oldFilePath : String, newFilePath : String, lang : String, ext : String)
-  extends DiffHandlerBase(oldFilePath, newFilePath, ext) {
+class ClocDiffHandler(clocPath: String, fileName: String, oldFilePath: String, newFilePath: String, category: String, language: String, extension: String)
+  extends DiffHandlerBase(fileName, oldFilePath, newFilePath, category, language) {
 
-  override def run() : Int = {
+  override def run(): FileMetrics = {
+
+    val result = super.run()
     val cmd = new ClocCommand(clocPath)
-    val r =
-    
-    if (oldFilePath.isEmpty)
-      cmd.cloc(newFilePath, lang, ext, 1)
-    else
-    if (newFilePath.isEmpty)
-      cmd.cloc(oldFilePath, lang, ext, -1)
-    else
-      cmd.diff(oldFilePath, newFilePath, lang, ext)
 
-    super.run()
+    try {
+      val r =
+        if (oldFilePath.isEmpty)
+        cmd.cloc(newFilePath, language, extension, 1)
+      else
+      if (newFilePath.isEmpty)
+        cmd.cloc(oldFilePath, language, extension, -1)
+      else
+        cmd.diff(oldFilePath, newFilePath, language, extension)
 
-    println("" + MetricType.LOC_ADDED + ": " + r.codePlus)
-    println("" + MetricType.LOC_REMOVED + ": " + r.codeMinus)
-    println("" + MetricType.LOC_CHANGED + ": " + r.codeChanged)
-    println("" + MetricType.LOC_UNCHANGED + ": " + r.codeUnchanged)
+      result.metrics += (MetricType.LOC_ADDED -> r.codePlus)
+      result.metrics += (MetricType.LOC_REMOVED -> r.codeMinus)
+      result.metrics += (MetricType.LOC_CHANGED -> r.codeChanged)
+      result.metrics += (MetricType.LOC_UNCHANGED -> r.codeUnchanged)
 
-    println("" + MetricType.COMMENT_ADDED + ": " + r.commentsPlus)
-    println("" + MetricType.COMMENT_REMOVED + ": " + r.commentsMinus)
-    println("" + MetricType.COMMENT_CHANGED + ": " + r.commentsChanged)
-    println("" + MetricType.COMMENT_UNCHANGED + ": " + r.commentsUnchanged)
+      result.metrics += (MetricType.COMMENT_ADDED -> r.commentsPlus)
+      result.metrics += (MetricType.COMMENT_REMOVED -> r.commentsMinus)
+      result.metrics += (MetricType.COMMENT_CHANGED -> r.commentsChanged)
+      result.metrics += (MetricType.COMMENT_UNCHANGED -> r.commentsUnchanged)
+    }
+    catch {
+      case e : ClocFileWasIgnoredException =>
+      result.metrics += (MetricType.FAILED -> 1)
+    }
 
-    0
+    result
   }
 }

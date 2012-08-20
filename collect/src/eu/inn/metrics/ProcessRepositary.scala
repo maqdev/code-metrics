@@ -35,25 +35,39 @@ import java.io.File
 
 class ProcessRepositary (config: CollectMetricsConfig, outputHandler : OutputHandler) {
 
-  def run() = {
+  def run() {
 
-    val git = new GitCommand(config.inputDirectory)
+    val git = new RepositaryOperations(config)
 
-    outputHandler.gitVersion(git.version())
+    val fileTypeList = new FileTypeList(config.fileCategoryRegexPath, config.clocCmd)
+    outputHandler.gitVersion(git.gitVersion())
     outputHandler.repositaryUrl(git.originUrl())
 
-    val fileTypesFileName = File.createTempFile("collect-metrics", ".binary")
-    fileTypesFileName.deleteOnExit()
+    val log = git.fetchCommitLog()
+    val size = log.size
+    var i = 0
 
-    val fileTypes = FileTypeList.defaultFileTypes
-    FileTypeList.serialize(fileTypes, fileTypesFileName.getAbsolutePath)
-
-    for (r <- git.log()) {
+    outputHandler.setProgress(i, size)
+    for (r <- log) {
       outputHandler.commit(r)
 
       if (r.commitType == GitCommitType.NORMAL) {
-        git.showCommitDiff(r)
+
+        val metrics = git.fetchCommitMetrics(r,
+          (fileName: String, oldFileName: String, newFileName: String) =>
+          {
+            outputHandler.processingFile(fileName, oldFileName, newFileName)
+            val dw = new DiffWrapper(config.clocCmd, fileTypeList)
+            dw.getMetrics(fileName, oldFileName, newFileName)
+          }
+        )
+
+        for (m <- metrics)
+          outputHandler.fileMetrics(m)
       }
+
+      i += 1
+      outputHandler.setProgress(i, size)
     }
   }
 }

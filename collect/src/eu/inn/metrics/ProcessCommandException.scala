@@ -31,4 +31,7 @@
 
 package eu.inn.metrics
 
+import scala.Predef.String
+import scala.Int
+
 case class ProcessCommandException(Message: String, resultCode: Int) extends Exception(Message)

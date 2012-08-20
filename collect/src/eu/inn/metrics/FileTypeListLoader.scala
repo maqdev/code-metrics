@@ -31,9 +31,11 @@
 
 package eu.inn.metrics
 
-import scala.Enumeration
+import io.Source
+import util.matching.Regex
 
-object DiffHandlerType extends Enumeration {
-  val CLOC = Value(1)
-  val BINARY = Value(2)
-}
+class FileTypeListLoader(path: String) {
+
+  var priority = 0
+
+ }

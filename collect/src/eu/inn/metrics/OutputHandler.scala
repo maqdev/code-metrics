@@ -32,8 +32,10 @@
 package eu.inn.metrics
 
 trait OutputHandler {
+  def processingFile(fileName: String, oldFileName: String, newFileName: String)
+  def setProgress(current: Int, maximum: Int)
+  def fileMetrics(metrics: FileMetrics)
   def gitVersion(version: GitVersion)
-
   def repositaryUrl(url : String)
   def commit(c : GitCommit)
 }

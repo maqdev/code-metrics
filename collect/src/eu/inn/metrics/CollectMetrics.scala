@@ -31,7 +31,7 @@
 
 package eu.inn.metrics
 
-import sys.process.{ProcessLogger, Process}
+import scala.collection.Seq
 
 object CollectMetrics {
 
@@ -41,6 +41,18 @@ object CollectMetrics {
         def options = Seq(
           opt("i", "input-dir", "inpit git repositary directory (local)") {
             (v: String, c: CollectMetricsConfig) => c.copy(inputDirectory = v)
+          } ,
+
+          opt("d", "diffwrapper-cmd", "diffwrapper path") {
+            (v: String, c: CollectMetricsConfig) => c.copy(diffwrapperCmd = v)
+          } ,
+
+          opt("c", "cloc-cmd", "cloc path") {
+            (v: String, c: CollectMetricsConfig) => c.copy(clocCmd = v)
+          } ,
+
+          opt("g", "categories", "path to file with list of category regex") {
+            (v: String, c: CollectMetricsConfig) => c.copy(fileCategoryRegexPath = v)
           }
         )
       }
@@ -49,7 +61,7 @@ object CollectMetrics {
       parser.parse(args, CollectMetricsConfig()) map {
         config =>
 
-          if (config.inputDirectory.isEmpty()) {
+          if (config.inputDirectory.isEmpty) {
             parser.toString()
           }
           else {
@@ -61,7 +73,10 @@ object CollectMetrics {
       }
     }
     catch {
-      case e => e.printStackTrace
+      case e: ProcessCommandException =>
+        if (e.resultCode != 0) Console println("Exception result code: " + e.resultCode);
+        e.printStackTrace()
+      case e: Throwable => e.printStackTrace()
     }
   }
 }

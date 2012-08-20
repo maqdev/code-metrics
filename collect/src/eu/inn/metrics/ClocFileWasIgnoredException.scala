@@ -31,4 +31,7 @@
 
 package eu.inn.metrics
 
-case class FileType(name: String, extensions: Seq[String], diffHandlerType : DiffHandlerType.Value)
+import scala.Predef.String
+import scala.Int
+
+case class ClocFileWasIgnoredException(Message: String) extends Exception(Message)

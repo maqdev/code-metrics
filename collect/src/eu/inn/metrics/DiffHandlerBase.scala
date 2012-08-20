@@ -32,32 +32,34 @@
 package eu.inn.metrics
 
 import java.io.File
-import scala.Console._
 
-abstract class DiffHandlerBase(oldFilePath: String, newFilePath: String, lang: String) {
-  def run() : Int = {
-    println("lang=" + lang)
+abstract class DiffHandlerBase(fileName: String, oldFilePath: String, newFilePath: String, category:String, language: String) {
+  def run(): FileMetrics = {
+
+    val metrics = scala.collection.mutable.Map[MetricType.Value, Int]()
+
     if (oldFilePath.isEmpty) {
-      println("" + MetricType.FILES_ADDED + ": " + 1)
+      metrics += (MetricType.FILES_ADDED -> 1)
 
       val f = new File(newFilePath)
-      println("" + MetricType.BYTES_ADDED + ": " + f.length)
+      metrics += (MetricType.BYTES_ADDED -> f.length.toInt)
     }
     else
     if (newFilePath.isEmpty) {
-      println("" + MetricType.FILES_REMOVED + ": " + 1)
+      metrics += (MetricType.FILES_REMOVED -> 1)
 
       val f = new File(oldFilePath)
-      println("" + MetricType.BYTES_REMOVED + ": " + f.length)
+      metrics += (MetricType.BYTES_REMOVED -> f.length.toInt)
     }
     else {
-      println("" + MetricType.FILES_CHANGED + ": " + 1)
+      metrics += (MetricType.FILES_CHANGED -> 1)
 
       val fold = new File(oldFilePath)
       val fnew = new File(newFilePath)
 
-      println("" + MetricType.BYTES_DELTA + ": " + (fnew.length-fold.length))
+      metrics += (MetricType.BYTES_DELTA -> (fnew.length - fold.length).toInt)
     }
-    0
+
+    FileMetrics(fileName, category, language, metrics)
   }
 }

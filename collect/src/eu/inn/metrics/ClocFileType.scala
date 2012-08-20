@@ -31,9 +31,7 @@
 
 package eu.inn.metrics
 
-import scala.Enumeration
+import scala.Predef.String
+import scala.Seq
 
-object DiffHandlerType extends Enumeration {
-  val CLOC = Value(1)
-  val BINARY = Value(2)
-}
+case class ClocFileType(language: String, extensions: Seq[String], diffHandlerType: DiffHandlerType.Value)

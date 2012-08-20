@@ -31,29 +31,31 @@
 
 package eu.inn.metrics
 
-import collection.mutable
+import scala.collection.mutable
 import scala.util.control.Breaks._
+import util.matching.Regex
 
-class ClocCommand(clocPath : String = "cloc", workDirectory : String = "")
+class ClocCommand(clocPath: String = "cloc", workDirectory: String = "")
   extends ProcessCommandBase(workDirectory, if (clocPath.isEmpty) "cloc" else clocPath) {
 
-  case class ClocResult(lang : String, codePlus : Int = 0, codeMinus : Int = 0, codeChanged : Int = 0, codeUnchanged : Int = 0,
-                        commentsPlus : Int = 0, commentsMinus : Int = 0, commentsChanged: Int = 0, commentsUnchanged : Int = 0)
+  case class ClocResult(lang: String, codePlus: Int = 0, codeMinus: Int = 0, codeChanged: Int = 0, codeUnchanged: Int = 0,
+                        commentsPlus: Int = 0, commentsMinus: Int = 0, commentsChanged: Int = 0, commentsUnchanged: Int = 0)
 
-  def internalCloc(cmd : Seq[String], columns : Seq[String], parseCsvLine : mutable.Map[String, String] => ClocResult) : ClocResult = {
+  def internalCloc(cmd: Seq[String], columns: Seq[String], parseCsvLine: mutable.Map[String, String] => ClocResult): ClocResult = {
     var firstCsvLineProcessed = false
     var unparsedOutput = ""
     var possibleUnparsedOutput = ""
     val columnMap = mutable.Map[String, Int]()
     var result = ClocResult("")
     var maxColumnIndex = 0
+    var fileIgnored = false
 
     val parse = (s: String) => {
       if (firstCsvLineProcessed) {
         val v = s.split(",")
         if (v.length >= maxColumnIndex) {
 
-          var m = mutable.Map[String,String]()
+          var m = mutable.Map[String, String]()
           for (c <- columns) {
             m += (c -> v(columnMap(c)).trim)
           }
@@ -70,16 +72,16 @@ class ClocCommand(clocPath : String = "cloc", workDirectory : String = "")
             firstCsvLineProcessed = true
             breakable {
               for (c <- columns) {
-                val index = v.indexWhere( s => s.trim == c)
+                val index = v.indexWhere(s => s.trim == c)
                 if (index >= 0) {
-                  columnMap += (c -> index);
+                  columnMap += (c -> index)
                   if (index > maxColumnIndex) {
                     maxColumnIndex = index
                   }
                 }
                 else {
                   firstCsvLineProcessed = false
-                  break;
+                  break()
                 }
               }
             }
@@ -87,20 +89,27 @@ class ClocCommand(clocPath : String = "cloc", workDirectory : String = "")
         }
 
         if (!firstCsvLineProcessed) {
+          if (s.contains("1 file ignored")) {
+            fileIgnored = true
+          }
           possibleUnparsedOutput += s + eol
         }
       }
-    } : Unit
+    }: Unit
 
-    run(cmd, parse)
+    run(cmd, parse, None)
 
+    if (fileIgnored) {
+      throw ClocFileWasIgnoredException("File ignored by cloc " + cmd + " result: " + possibleUnparsedOutput + unparsedOutput)
+    }
+    else
     if (!unparsedOutput.isEmpty || result.lang.isEmpty)
       throw ProcessCommandException("Couldn't parse " + cmd + " result: " + possibleUnparsedOutput + unparsedOutput, 0)
 
     result
   }
 
-  def cloc(filePath : String, lang : String, ext : String, multiplier : Int) : ClocResult = {
+  def cloc(filePath: String, lang: String, ext: String, multiplier: Int): ClocResult = {
 
     val cmd = List("--force-lang=" + lang + "," + ext, "--csv", filePath)
 
@@ -154,5 +163,37 @@ class ClocCommand(clocPath : String = "cloc", workDirectory : String = "")
       parse
     )
   }
+
+  def getLanguages(): mutable.MutableList[ClocFileType] = {
+
+    val regx : Regex = """(.*)\((.*)\)""".r
+    var unparsedOutput = ""
+
+    var result = mutable.MutableList[ClocFileType]()
+
+    val parse = (s: String) => {
+      val o = regx.findFirstMatchIn(s)
+      if (!o.isEmpty) {
+        val language = o.get.group(1).trim()
+        val extensions = o.get.group(2).split(',').map(s => s.trim)
+
+        val r = ClocFileType(language, extensions, DiffHandlerType.CLOC)
+
+        result += r
+      }
+      else {
+        unparsedOutput += s + eol
+      }
+    }: Unit
+
+    val cmd = List("--show-lang")
+    run(cmd, parse, None)
+
+    if (!unparsedOutput.isEmpty || result.isEmpty)
+      throw ProcessCommandException("Couldn't parse " + cmd + " result: " + unparsedOutput, 0)
+
+    result
+  }
+
 }
 

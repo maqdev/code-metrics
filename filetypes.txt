@@ -1,0 +1,3 @@
+generated|php|BINARY|summary\.php
+twig|test|BINARY|inn/renderer/Twig\.php
+twig|test2|BINARY|inn/renderer/Twig\.php

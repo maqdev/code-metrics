@@ -31,22 +31,65 @@
 
 package eu.inn.metrics
 
-import scala.collection.mutable.Map
-import java.io._
+import scala.collection._
+import scala.{Seq, List}
+import org.apache.commons.io.FilenameUtils
+import util.matching.Regex
+import io.Source
 
-object FileTypeList {
+class FileTypeList(fileTypeRegexList: String, clocCmd: String) {
 
-  def defaultFileTypes : Seq[FileType] = List(
-    FileType("PHP", List("php","php3","php4", "php5"), DiffHandlerType.CLOC),
-    FileType("SQL", List("psql","SQL","sql"), DiffHandlerType.CLOC)
+  val defaultFileTypesMap = loadFileMap()
+  val sortedFileTypeRegexList = loadFileCategoryRegex().sortBy(f => - f.priority)
 
-  )
+  case class FileTypeResult(handlerType : DiffHandlerType.Value, language: String, extension: String, category: String)
 
-  def deserialize(fileName : String) : Seq[FileType] = {
+  def getFileType(fileName: String): FileTypeResult = {
+    val ext = FilenameUtils.getExtension(fileName)
+
+    val default = defaultFileTypesMap.get(ext) match {
+      case Some(s) => FileTypeResult(s.diffHandlerType, s.language, ext, s.language)
+      case None => FileTypeResult(DiffHandlerType.BINARY, ext, ext, ext)
+    }
+
+    for (ft <- sortedFileTypeRegexList)
+      if (ft.regex.findFirstIn(fileName).isDefined) {
+
+        val handler = ft.diffHandlerType.getOrElse(default.handlerType)
+        val language = ft.language.getOrElse(default.language)
+        return FileTypeResult(handler, language, ext, ft.category)
+      }
+
+    default
+  }
+
+  /*
+  * File format:
+  * category|*language|*handler_type|regular_expression
+  *
+  * */
+  def parseFileCategoryRegexLine (s: String) = {
+    val a = s.split('|').toArray
+    priority -= 1
+    val category = a(0)
+    val language = if (a(1).isEmpty) None else Option(a(1))
+    val handler = if (a(2).isEmpty) None else Option(DiffHandlerType.withName(a(2)))
+    val regex = a(3)
+    FileCategoryRegex(category, new Regex(regex), priority, handler, language)
+  }
+  var priority = 0
+
+  def loadFileCategoryRegex (): Seq[FileCategoryRegex] = {
+    Source.fromFile(fileTypeRegexList).getLines().map(s => parseFileCategoryRegexLine(s)).toSeq
+  }
+
+
+  /* not used
+  def deserialize(fileName: String): Seq[ClocFileType] = {
     val f = new FileInputStream(fileName)
     val o = new ObjectInputStream(f)
     try {
-      o.readObject().asInstanceOf[Seq[FileType]]
+      o.readObject().asInstanceOf[Seq[ClocFileType]]
     }
     finally {
       o.close()
@@ -54,7 +97,7 @@ object FileTypeList {
     }
   }
 
-  def serialize(fileTypes : Seq[FileType], fileName : String) {
+  def serialize(fileTypes: Seq[ClocFileType], fileName: String) {
     val f = new FileOutputStream(fileName)
     val o = new ObjectOutputStream(f)
     try {
@@ -65,14 +108,16 @@ object FileTypeList {
       f.close()
     }
   }
+  */
 
-  def createFileMap(types: Seq[FileType]) = {
-    val map = Map[String, FileType]()
+  def loadFileMap() = {
 
+    val cloc = new ClocCommand(clocCmd)
+    val types = cloc.getLanguages()
+    val map = mutable.Map[String, ClocFileType]()
     for (t <- types)
       for (e <- t.extensions)
         map += (e -> t)
-
     map
   }
 }

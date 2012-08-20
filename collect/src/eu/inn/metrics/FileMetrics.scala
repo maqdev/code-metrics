@@ -31,4 +31,6 @@
 
 package eu.inn.metrics
 
-case class CommandException(Message: String, resultCode: Int) extends Exception(Message)
+import collection.mutable
+
+case class FileMetrics(fileName: String, category: String, language: String, metrics: mutable.Map[MetricType.Value, Int])

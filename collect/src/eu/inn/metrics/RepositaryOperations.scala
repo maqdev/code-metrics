@@ -31,16 +31,18 @@
 
 package eu.inn.metrics
 
-import sys.process._
 import collection.mutable
 import org.joda.time.format.DateTimeFormat
+import util.matching._
+import java.io.OutputStream
+import concurrent.SyncVar
 
-class GitCommand(workDirectory : String = "") extends ProcessCommandBase(workDirectory, "git") {
+class RepositaryOperations(config : CollectMetricsConfig) extends ProcessCommandBase(config.inputDirectory, "git") {
 
-  def version() = {
+  def gitVersion() = {
     var version = GitVersion(0,0,0,0)
 
-    val regx = """git version (\d+)\.(\d+)\.(\d+)\.(\d+)(.*)""".r
+    val regx : Regex = """git version (\d+)\.(\d+)\.(\d+)\.(\d+)(.*)""".r
     var unparsedOutput = ""
 
     val parse = (s : String) => {
@@ -52,7 +54,7 @@ class GitCommand(workDirectory : String = "") extends ProcessCommandBase(workDir
     }
 
     val cmd = List("--version")
-    run(cmd, parse )
+    run(cmd, parse, None)
 
     if (!unparsedOutput.isEmpty || version.hi == 0)
       throw ProcessCommandException("Couldn't parse " + cmd + " result: " + unparsedOutput, 0)
@@ -61,7 +63,7 @@ class GitCommand(workDirectory : String = "") extends ProcessCommandBase(workDir
   }
 
   def originUrl() = {
-    val regx = """origin\s*(.*)://(?:.*@)?(.*?)(\s*)\(fetch\)""".r
+    val regx : Regex = """origin\s*(.*)://(?:.*@)?(.*?)(\s*)\(fetch\)""".r
     var unparsedOutput = ""
 
     var result : String = ""
@@ -74,7 +76,7 @@ class GitCommand(workDirectory : String = "") extends ProcessCommandBase(workDir
     }
 
     val cmd = List("remote", "-v")
-    run(cmd, parse )
+    run(cmd, parse, None)
 
     if (result.isEmpty())
       throw ProcessCommandException("Couldn't parse " + cmd + " result: " + unparsedOutput, 0)
@@ -82,7 +84,7 @@ class GitCommand(workDirectory : String = "") extends ProcessCommandBase(workDir
     result
   }
 
-  def log() : Seq[GitCommit] = {
+  def fetchCommitLog() : Seq[GitCommit] = {
 
     /*
     executed command:
@@ -92,7 +94,7 @@ class GitCommand(workDirectory : String = "") extends ProcessCommandBase(workDir
     23873339243c520fbac496aa40326fcde62bab1a; Magomed Abdurakhmanov; maqdev@gmail.com; 2012-08-13 09:25:51 +0200; a2ee1e8b0298acfd81a4ae15f288c77315153343;
     */
 
-    val regx = """(.*); (.*); (.*); (.*); (.*)?;""".r
+    val regx : Regex = """(.*); (.*); (.*); (.*); (.*)?;""".r
     var unparsedOutput = ""
 
     var result = mutable.MutableList[GitCommit]()
@@ -117,8 +119,8 @@ class GitCommand(workDirectory : String = "") extends ProcessCommandBase(workDir
       }
     } : Unit
 
-    val cmd = List("log", """--pretty=format:%H; %an; %ae; %ai; %P;""")
-    run(cmd, parse )
+    val cmd = List("log", "--all", """--pretty=format:%H; %an; %ae; %ai; %P;""")
+    run(cmd, parse, None)
 
     if (!unparsedOutput.isEmpty)
       throw ProcessCommandException("Couldn't parse " + cmd + " result: " + unparsedOutput, 0)
@@ -126,27 +128,69 @@ class GitCommand(workDirectory : String = "") extends ProcessCommandBase(workDir
     result.toSeq
   }
 
-  def showCommitDiff(commit : GitCommit) {
-    val regxFirstLine = """(.*);""".r
+  def fetchCommitMetrics(commit: GitCommit, getMetrics: (String, String, String) => FileMetrics) : Seq[FileMetrics] = {
+    val regxFirstLine : Regex = """(.*);""".r
     var unparsedOutput = ""
     var hash = ""
 
-    val parse = (s : String) => {
-      if (hash.isEmpty()) {
+    var result = new mutable.MutableList[FileMetrics]
 
+    var fileName = ""
+    var oldFileName = ""
+    var newFileName = ""
+
+    val parse = (s: String, os: SyncVar[OutputStream]) => {
+      if (hash.isEmpty()) {
         val o = regxFirstLine.findFirstMatchIn(s)
         if (!o.isEmpty)
           hash = o.get.group(1)
         else
           unparsedOutput += s + eol
       }
-    }
+      else {
+        if (s == "--- end ---") {
+          result += getMetrics(fileName, oldFileName, newFileName)
+
+          val o = os.get
+          o.write(eol.getBytes("UTF-8"))
+          o.flush()
+        }
+        else {
+          val idx = s.indexOf(":")
+          if (idx > 0) {
+            val key = s.substring(0, idx)
+            val value = s.substring(idx + 1, s.length)
+
+            key match {
+              case "1" => fileName = value
+              case "2" => oldFileName = if (value == "/dev/null") "" else value
+              case "5" => newFileName = if (value == "/dev/null") "" else value
+              case _ => ()
+            }
+          }
+          else
+            unparsedOutput += s + eol;
+        }
+      }
+    } : Unit
+
+    val diffToolCmd = config.diffwrapperCmd;
 
     val cmd = List("show", "--ext-diff", """--pretty=format:%H;""", commit.hash)
-    run(cmd, parse )
+    var os = new SyncVar[OutputStream]
+    try
+    {
+      run(cmd, (s : String) => parse(s, os), Some(os), ("GIT_EXTERNAL_DIFF" -> diffToolCmd))
+    }
+    finally {
+      if (os.isSet)
+        os.get.close()
+    }
 
     if (!unparsedOutput.isEmpty || hash != commit.hash)
       throw ProcessCommandException("Couldn't parse " + cmd + " result: " + unparsedOutput, 0)
+
+    result
   }
 }
 

@@ -31,9 +31,7 @@
 
 package eu.inn.metrics
 
-import scala.Enumeration
+import scala.Predef.String
+import util.matching.Regex
 
-object DiffHandlerType extends Enumeration {
-  val CLOC = Value(1)
-  val BINARY = Value(2)
-}
+case class FileCategoryRegex(category: String, regex: Regex, priority: Int, diffHandlerType: Option[DiffHandlerType.Value], language: Option[String])

@@ -31,6 +31,8 @@
 
 package eu.inn.metrics
 
-class BinaryDiffHandler(oldFilePath: String, newFilePath: String, ext: String) extends
-  DiffHandlerBase(oldFilePath, newFilePath, ext) {
+import scala.Predef.String
+
+class BinaryDiffHandler(fileName: String, oldFilePath: String, newFilePath: String, category: String, language: String) extends
+  DiffHandlerBase(fileName, oldFilePath, newFilePath, category, language) {
 }

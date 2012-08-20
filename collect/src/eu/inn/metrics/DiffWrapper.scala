@@ -31,42 +31,19 @@
 
 package eu.inn.metrics
 
-import org.apache.commons.io.FilenameUtils
+import scala.Predef.String
 
-object DiffWrapper {
-  def main(args: Array[String]) {
-    if (args.length < 8) {
-      println("Usage : cloc_path file_types_path file_name old_file_path old_hash old_mode new_file_path new_hash new_mode")
+class DiffWrapper(clocCmd: String, ftl : FileTypeList) {
+
+  def getMetrics(fileName: String, oldFilePath: String, newFilePath: String) : FileMetrics = {
+
+    val ft = ftl.getFileType(fileName);
+
+    val h = ft.handlerType match {
+      case DiffHandlerType.CLOC => new ClocDiffHandler(clocCmd, fileName, oldFilePath, newFilePath, ft.category, ft.language, ft.extension)
+      case DiffHandlerType.BINARY => new BinaryDiffHandler(fileName, oldFilePath, newFilePath, ft.category, ft.language)
     }
 
-    try {
-
-      val clocPath = args(0)
-      val fileTypesFileName = args(1)
-      val fileName = args(2)
-      val oldFilePath = if (args(3) == "/dev/null") "" else args(3)
-      val newFilePath = if (args(6) == "/dev/null") "" else args(6)
-
-      val fileTypes = if (fileTypesFileName.isEmpty) FileTypeList.defaultFileTypes else FileTypeList.deserialize(fileTypesFileName)
-      val fileTypesMap = FileTypeList.createFileMap(fileTypes)
-
-      val ext = FilenameUtils.getExtension(fileName)
-
-      val (handlerType, lang) = fileTypesMap.get(ext) match {
-        case Some(s) => (s.diffHandlerType, s.name)
-        case None => (DiffHandlerType.BINARY, ext)
-      }
-
-      val h = handlerType match {
-        case DiffHandlerType.CLOC => new ClocDiffHandler(clocPath, oldFilePath, newFilePath, lang, ext)
-        case DiffHandlerType.BINARY => new BinaryDiffHandler(oldFilePath, newFilePath, ext)
-      }
-
-      Console println("filename: " + fileName)
-      h.run()
-    }
-    catch {
-      case e => e.printStackTrace
-    }
+    h.run()
   }
 }

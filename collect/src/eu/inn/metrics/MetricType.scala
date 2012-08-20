@@ -31,6 +31,9 @@
 
 package eu.inn.metrics
 
+import scala.Enumeration
+
+
 object MetricType extends Enumeration {
   val FILES_ADDED = Value("+ files")
   val FILES_REMOVED = Value("- files")
@@ -46,4 +49,5 @@ object MetricType extends Enumeration {
   val COMMENT_REMOVED = Value("- comment")
   val COMMENT_CHANGED = Value("!= comment")
   val COMMENT_UNCHANGED = Value("== comment")
+  val FAILED = Value("failed")
 }

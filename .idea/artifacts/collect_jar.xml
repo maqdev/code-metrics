@@ -1,0 +1,17 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="collect:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/collect_jar</output-path>
+    <root id="archive" name="collect.jar">
+      <element id="directory" name="META-INF">
+        <element id="file-copy" path="$PROJECT_DIR$/codemetrics-common/src/META-INF/MANIFEST.MF" />
+      </element>
+      <element id="module-output" name="collect" />
+      <element id="module-output" name="codemetrics-common" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/lib/joda-convert-1.2.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/lib/scopt_2.9.2-2.1.0.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/lib/scala-library-2.9.2.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/lib/joda-time-2.1.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="/opt/local/share/scala-2.9/lib/scala-library.jar" path-in-jar="/" />
+    </root>
+  </artifact>
+</component>
