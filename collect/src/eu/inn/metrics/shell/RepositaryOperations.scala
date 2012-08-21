@@ -37,7 +37,6 @@ import util.matching._
 import java.io.OutputStream
 import concurrent.SyncVar
 import eu.inn.metrics._
-import scala.Some
 import eu.inn.metrics.CollectMetricsConfig
 import eu.inn.metrics.FileMetrics
 import scala.Some
