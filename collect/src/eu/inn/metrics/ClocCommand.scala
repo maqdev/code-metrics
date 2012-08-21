@@ -49,6 +49,7 @@ class ClocCommand(clocPath: String = "cloc", workDirectory: String = "")
     var result = ClocResult("")
     var maxColumnIndex = 0
     var fileIgnored = false
+    var diffError = false
 
     val parse = (s: String) => {
       if (firstCsvLineProcessed) {
@@ -91,6 +92,10 @@ class ClocCommand(clocPath: String = "cloc", workDirectory: String = "")
         if (!firstCsvLineProcessed) {
           if (s.contains("1 file ignored")) {
             fileIgnored = true
+          }
+          else
+          if (s.contains("Diff error")) {
+            diffError = true
           }
           possibleUnparsedOutput += s + eol
         }

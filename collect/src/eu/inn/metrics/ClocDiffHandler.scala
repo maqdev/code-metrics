@@ -63,6 +63,9 @@ class ClocDiffHandler(clocPath: String, fileName: String, oldFilePath: String, n
     catch {
       case e : ClocFileWasIgnoredException =>
       result.metrics += (MetricType.FAILED -> 1)
+
+      case e : ProcessCommandException =>
+        result.metrics += (MetricType.FAILED -> 1)
     }
 
     result
