@@ -29,13 +29,8 @@
  *  Magomed Abdurakhmanov (maga@inn.eu)
  */
 
-package eu.inn.metrics
+package eu.inn.metrics.diff
 
-trait OutputHandler {
-  def processingFile(fileName: String, oldFileName: String, newFileName: String)
-  def setProgress(current: Int, maximum: Int)
-  def fileMetrics(metrics: FileMetrics)
-  def gitVersion(version: GitVersion)
-  def repositaryUrl(url : String)
-  def commit(c : GitCommit)
+class BinaryDiffHandler(fileName: String, oldFilePath: String, newFilePath: String, category: String, language: String) extends
+DiffHandlerBase(fileName, oldFilePath, newFilePath, category, language) {
 }

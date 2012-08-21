@@ -31,7 +31,9 @@
 
 package eu.inn.metrics
 
-import java.io.File
+import diff.DiffWrapper
+import output.OutputHandler
+import eu.inn.metrics.shell.{RepositaryOperations}
 
 class ProcessRepositary (config: CollectMetricsConfig, outputHandler : OutputHandler) {
 
@@ -51,7 +53,7 @@ class ProcessRepositary (config: CollectMetricsConfig, outputHandler : OutputHan
     for (r <- log) {
       outputHandler.commit(r)
 
-      if (r.commitType == GitCommitType.NORMAL) {
+      if (r.commitType == RepositaryCommitType.NORMAL) {
 
         val metrics = git.fetchCommitMetrics(r,
           (fileName: String, oldFileName: String, newFileName: String) =>

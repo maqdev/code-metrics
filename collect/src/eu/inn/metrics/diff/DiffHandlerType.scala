@@ -29,42 +29,11 @@
  *  Magomed Abdurakhmanov (maga@inn.eu)
  */
 
-package eu.inn.metrics
+package eu.inn.metrics.diff
 
-class StdOutputHandler extends OutputHandler {
-  var progress = 0
+import scala.Enumeration
 
-  def repositaryUrl(url: String) {
-    println(url)
-  }
-
-  def commit(c: GitCommit) {
-    println("-------------------------------")
-    println("" + c.dt + " " + c.commitType + " " + c.name + " " + c.email + " " + c.hash)
-  }
-
-  def gitVersion(version: GitVersion) {
-    println(version)
-  }
-
-  def fileMetrics(metrics: FileMetrics) {
-    println(metrics.fileName)
-    println("category = " + metrics.category)
-    println("language = " + metrics.language)
-    for ((key,value) <- metrics.metrics)
-      println(key + " = " + value)
-    println()
-  }
-
-  def processingFile(fileName: String, oldFileName: String, newFileName: String) {
-    println("Processing file " + fileName + "...")
-  }
-
-  def setProgress(current: Int, maximum: Int) {
-    val percent = current*100/maximum
-    if (percent != progress) {
-      println("Completed " + percent + "%")
-    }
-    progress = percent
-  }
+object DiffHandlerType extends Enumeration {
+  val CLOC = Value(1)
+  val BINARY = Value(2)
 }

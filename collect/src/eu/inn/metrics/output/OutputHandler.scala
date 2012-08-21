@@ -29,9 +29,21 @@
  *  Magomed Abdurakhmanov (maga@inn.eu)
  */
 
-package eu.inn.metrics
+package eu.inn.metrics.output
 
-import scala.Predef.String
-import scala.Int
+import eu.inn.metrics.{RepositaryCommit, FileMetrics}
+import eu.inn.metrics.shell.{GitVersion}
 
-case class ClocFileWasIgnoredException(Message: String) extends Exception(Message)
+trait OutputHandler {
+  def processingFile(fileName: String, oldFileName: String, newFileName: String)
+
+  def setProgress(current: Int, maximum: Int)
+
+  def fileMetrics(metrics: FileMetrics)
+
+  def gitVersion(version: GitVersion)
+
+  def repositaryUrl(url: String)
+
+  def commit(c: RepositaryCommit)
+}

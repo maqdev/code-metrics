@@ -31,6 +31,7 @@
 
 package eu.inn.metrics
 
+import diff.DiffHandlerType
 import scala.Predef.String
 import util.matching.Regex
 

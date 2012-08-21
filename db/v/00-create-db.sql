@@ -109,38 +109,61 @@ grant select,insert,update on project to codemetrics, codemetrics_admin;
 grant select on project to codemetrics_web;
 
 ----------------------------------------------------------------------------------------
--- project file groups
-----------------------------------------------------------------------------------------
-
-create table file_group - file_type
-(
-    file_group_id serial,
-    project_id int not null,
-    name varchar(120) not null,
-    mask varchar(120) not null,
-    priority int not null,
-   	constraint pk_file_group primary key (file_group_id),
-    constraint fk_file_group__project foreign key (project_id) references project(project_id)
-);
-
-grant select,insert,update on file_group to codemetrics_admin;
-grant select on file_group to codemetrics, codemetrics_web;
-
-----------------------------------------------------------------------------------------
--- file types
+-- file_type (languages)
 ----------------------------------------------------------------------------------------
 
 create table file_type
 (
     file_type_id serial,
     name varchar(120) not null,
-    mask varchar(4096) not null,
     constraint pk_file_type primary key (file_type_id)
 );
 
 grant select,insert,update on file_type to codemetrics_admin;
 grant select, insert on file_type to codemetrics;
 grant select on file_type to codemetrics_web;
+
+create unique index ix_file_type__name on file_type(name);
+
+----------------------------------------------------------------------------------------
+-- diff_handler
+----------------------------------------------------------------------------------------
+
+create table diff_handler
+(
+    diff_handler_id int,
+    name varchar(120) not null,
+    constraint pk_diff_handler primary key (diff_handler_id)
+);
+
+grant select on diff_handler to codemetrics_admin;
+grant select on diff_handler to codemetrics;
+grant select on diff_handler to codemetrics_web;
+
+insert into diff_handler values (1, 'CLOC');
+insert into diff_handler values (2, 'BINARY');
+
+----------------------------------------------------------------------------------------
+-- project file_category
+----------------------------------------------------------------------------------------
+
+create table file_category
+(
+    file_category_id serial,
+    project_id int not null,
+    name varchar(120) not null,
+    regex varchar(4096) not null,
+    priority int not null,
+    file_type_id int null,
+    diff_handler_id int null,
+   	constraint pk_file_category primary key (file_category_id),
+    constraint fk_file_category__project foreign key (project_id) references project(project_id),
+    constraint fk_file_category__file_type foreign key (file_type_id) references file_type(file_type_id),
+    constraint fk_file_category__diff_handler foreign key (diff_handler_id) references diff_handler(diff_handler_id)
+);
+
+grant select,insert,update on file_category to codemetrics_admin;
+grant select on file_category to codemetrics, codemetrics_web;
 
 ----------------------------------------------------------------------------------------
 -- author
@@ -168,10 +191,12 @@ create table file
     file_id serial,
     project_id int not null,
     file_type_id int not null,
+    file_category_id int null,
     path varchar(4096) not null,
     constraint pk_file primary key (file_id),
     constraint fk_file__project foreign key (project_id) references project(project_id),
-    constraint fk_file__file_type foreign key (file_type_id) references file_type(file_type_id)
+    constraint fk_file__file_type foreign key (file_type_id) references file_type(file_type_id),
+    constraint fk_file__file_category foreign key (file_category_id) references file_category(file_category_id)
 );
 
 grant select,insert,update,delete on file to codemetrics_admin;
@@ -193,7 +218,7 @@ create table commt
     constraint pk_commt primary key (commt_id),
     constraint fk_commt__project foreign key (project_id) references project(project_id),
     constraint fk_commt__author foreign key (author_id) references author(author_id),
-    constraint ck_commt__commit_type constraint check commit_type in (1 /*normal*/, 2 /*merge*/)
+    constraint ck_commt__commit_type check (commit_type in (1 /*normal*/, 2 /*merge*/))
 );
 
 create unique index ix_commt_hash on commt(hash);
@@ -213,7 +238,7 @@ create table metric_type
     constraint pk_metric_type primary key (metric_type_id)
 );
 
-create unique index ix_metric_type on metric(name);
+create unique index ix_metric_type__name on metric_type(name);
 
 grant select,insert,update,delete on metric_type to codemetrics_admin;
 grant select on metric_type to codemetrics;

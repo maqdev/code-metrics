@@ -29,21 +29,6 @@
  *  Magomed Abdurakhmanov (maga@inn.eu)
  */
 
-package eu.inn.metrics
+package eu.inn.metrics.shell
 
-import scala.Predef.String
-
-class DiffWrapper(clocCmd: String, ftl : FileTypeList) {
-
-  def getMetrics(fileName: String, oldFilePath: String, newFilePath: String) : FileMetrics = {
-
-    val ft = ftl.getFileType(fileName);
-
-    val h = ft.handlerType match {
-      case DiffHandlerType.CLOC => new ClocDiffHandler(clocCmd, fileName, oldFilePath, newFilePath, ft.category, ft.language, ft.extension)
-      case DiffHandlerType.BINARY => new BinaryDiffHandler(fileName, oldFilePath, newFilePath, ft.category, ft.language)
-    }
-
-    h.run()
-  }
-}
+case class GitVersion(hi: Int, mid: Int, lo: Int, build: Int, ext: String = "")

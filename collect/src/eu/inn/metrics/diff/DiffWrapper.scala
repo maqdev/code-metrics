@@ -29,11 +29,21 @@
  *  Magomed Abdurakhmanov (maga@inn.eu)
  */
 
-package eu.inn.metrics
+package eu.inn.metrics.diff
 
-import scala.Enumeration
+import eu.inn.metrics.{FileMetrics, FileTypeList}
 
-object DiffHandlerType extends Enumeration {
-  val CLOC = Value(1)
-  val BINARY = Value(2)
+class DiffWrapper(clocCmd: String, ftl: FileTypeList) {
+
+  def getMetrics(fileName: String, oldFilePath: String, newFilePath: String): FileMetrics = {
+
+    val ft = ftl.getFileType(fileName);
+
+    val h = ft.handlerType match {
+      case DiffHandlerType.CLOC => new ClocDiffHandler(clocCmd, fileName, oldFilePath, newFilePath, ft.category, ft.language, ft.extension)
+      case DiffHandlerType.BINARY => new BinaryDiffHandler(fileName, oldFilePath, newFilePath, ft.category, ft.language)
+    }
+
+    h.run()
+  }
 }

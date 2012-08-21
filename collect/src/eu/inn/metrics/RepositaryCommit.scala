@@ -31,4 +31,4 @@
 
 package eu.inn.metrics
 
-case class GitVersion(hi : Int, mid: Int, lo: Int, build: Int, ext : String = "")
+case class RepositaryCommit(hash: String, name: String, email: String, commitType: RepositaryCommitType.Value, dt: org.joda.time.DateTime)

@@ -29,10 +29,11 @@
  *  Magomed Abdurakhmanov (maga@inn.eu)
  */
 
-package eu.inn.metrics
+package eu.inn.metrics.shell
 
+import eu.inn.metrics.diff.DiffHandlerType
 import scala.Predef.String
+import scala.Seq
+import eu.inn.metrics.diff.DiffHandlerType
 
-class BinaryDiffHandler(fileName: String, oldFilePath: String, newFilePath: String, category: String, language: String) extends
-  DiffHandlerBase(fileName, oldFilePath, newFilePath, category, language) {
-}
+case class ClocFileType(language: String, extensions: Seq[String], diffHandlerType: DiffHandlerType.Value)

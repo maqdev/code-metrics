@@ -31,7 +31,9 @@
 
 package eu.inn.metrics
 
+import output.StdOutputHandler
 import scala.collection.Seq
+import shell.ProcessCommandException
 
 object CollectMetrics {
 

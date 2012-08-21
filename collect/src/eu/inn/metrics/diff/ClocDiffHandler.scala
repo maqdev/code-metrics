@@ -29,8 +29,11 @@
  *  Magomed Abdurakhmanov (maga@inn.eu)
  */
 
-package eu.inn.metrics
+package eu.inn.metrics.diff
 
+import eu.inn.metrics._
+import eu.inn.metrics.FileMetrics
+import shell.{ClocFileWasIgnoredException, ProcessCommandException, ClocCommand}
 
 class ClocDiffHandler(clocPath: String, fileName: String, oldFilePath: String, newFilePath: String, category: String, language: String, extension: String)
   extends DiffHandlerBase(fileName, oldFilePath, newFilePath, category, language) {
@@ -43,12 +46,12 @@ class ClocDiffHandler(clocPath: String, fileName: String, oldFilePath: String, n
     try {
       val r =
         if (oldFilePath.isEmpty)
-        cmd.cloc(newFilePath, language, extension, 1)
-      else
-      if (newFilePath.isEmpty)
-        cmd.cloc(oldFilePath, language, extension, -1)
-      else
-        cmd.diff(oldFilePath, newFilePath, language, extension)
+          cmd.cloc(newFilePath, language, extension, 1)
+        else
+        if (newFilePath.isEmpty)
+          cmd.cloc(oldFilePath, language, extension, -1)
+        else
+          cmd.diff(oldFilePath, newFilePath, language, extension)
 
       result.metrics += (MetricType.LOC_ADDED -> r.codePlus)
       result.metrics += (MetricType.LOC_REMOVED -> r.codeMinus)
@@ -61,10 +64,10 @@ class ClocDiffHandler(clocPath: String, fileName: String, oldFilePath: String, n
       result.metrics += (MetricType.COMMENT_UNCHANGED -> r.commentsUnchanged)
     }
     catch {
-      case e : ClocFileWasIgnoredException =>
-      result.metrics += (MetricType.FAILED -> 1)
+      case e: ClocFileWasIgnoredException =>
+        result.metrics += (MetricType.FAILED -> 1)
 
-      case e : ProcessCommandException =>
+      case e: ProcessCommandException =>
         result.metrics += (MetricType.FAILED -> 1)
     }
 

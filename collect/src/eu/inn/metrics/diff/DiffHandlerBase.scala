@@ -29,9 +29,39 @@
  *  Magomed Abdurakhmanov (maga@inn.eu)
  */
 
-package eu.inn.metrics
+package eu.inn.metrics.diff
 
-import scala.Predef.String
-import scala.Seq
+import java.io.File
+import eu.inn.metrics.{MetricType}
+import eu.inn.metrics.FileMetrics
 
-case class ClocFileType(language: String, extensions: Seq[String], diffHandlerType: DiffHandlerType.Value)
+abstract class DiffHandlerBase(fileName: String, oldFilePath: String, newFilePath: String, category: String, language: String) {
+  def run(): FileMetrics = {
+
+    val metrics = scala.collection.mutable.Map[MetricType.Value, Int]()
+
+    if (oldFilePath.isEmpty) {
+      metrics += (MetricType.FILES_ADDED -> 1)
+
+      val f = new File(newFilePath)
+      metrics += (MetricType.BYTES_ADDED -> f.length.toInt)
+    }
+    else
+    if (newFilePath.isEmpty) {
+      metrics += (MetricType.FILES_REMOVED -> 1)
+
+      val f = new File(oldFilePath)
+      metrics += (MetricType.BYTES_REMOVED -> f.length.toInt)
+    }
+    else {
+      metrics += (MetricType.FILES_CHANGED -> 1)
+
+      val fold = new File(oldFilePath)
+      val fnew = new File(newFilePath)
+
+      metrics += (MetricType.BYTES_DELTA -> (fnew.length - fold.length).toInt)
+    }
+
+    FileMetrics(fileName, category, language, metrics)
+  }
+}

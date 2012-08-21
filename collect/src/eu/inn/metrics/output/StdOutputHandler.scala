@@ -29,9 +29,45 @@
  *  Magomed Abdurakhmanov (maga@inn.eu)
  */
 
-package eu.inn.metrics
+package eu.inn.metrics.output
 
-object GitCommitType extends Enumeration {
-  val NORMAL = Value(1)
-  val MERGE = Value(2)
+import eu.inn.metrics.{RepositaryCommit, FileMetrics}
+import eu.inn.metrics.shell.{GitVersion}
+
+class StdOutputHandler extends OutputHandler {
+  var progress = 0
+
+  def repositaryUrl(url: String) {
+    println(url)
+  }
+
+  def commit(c: RepositaryCommit) {
+    println("-------------------------------")
+    println("" + c.dt + " " + c.commitType + " " + c.name + " " + c.email + " " + c.hash)
+  }
+
+  def gitVersion(version: GitVersion) {
+    println(version)
+  }
+
+  def fileMetrics(metrics: FileMetrics) {
+    println(metrics.fileName)
+    println("category = " + metrics.category)
+    println("language = " + metrics.language)
+    for ((key, value) <- metrics.metrics)
+      println(key + " = " + value)
+    println()
+  }
+
+  def processingFile(fileName: String, oldFileName: String, newFileName: String) {
+    println("Processing file " + fileName + "...")
+  }
+
+  def setProgress(current: Int, maximum: Int) {
+    val percent = current * 100 / maximum
+    if (percent != progress) {
+      println("Completed " + percent + "%")
+    }
+    progress = percent
+  }
 }

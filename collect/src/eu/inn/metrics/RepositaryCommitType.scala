@@ -31,11 +31,7 @@
 
 package eu.inn.metrics
 
-import io.Source
-import util.matching.Regex
-
-class FileTypeListLoader(path: String) {
-
-  var priority = 0
-
- }
+object RepositaryCommitType extends Enumeration {
+  val NORMAL = Value(1)
+  val MERGE = Value(2)
+}

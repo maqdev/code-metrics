@@ -29,6 +29,7 @@
  *  Magomed Abdurakhmanov (maga@inn.eu)
  */
 
-package eu.inn.metrics
+package eu.inn.metrics.shell
 
-case class GitCommit (hash:String, name: String, email: String, commitType : GitCommitType.Value, dt : org.joda.time.DateTime)
+
+case class ClocFileWasIgnoredException(Message: String) extends Exception(Message)

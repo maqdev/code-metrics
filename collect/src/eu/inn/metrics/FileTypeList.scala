@@ -31,9 +31,11 @@
 
 package eu.inn.metrics
 
+import diff.DiffHandlerType
 import scala.collection._
 import scala.{Seq, List}
 import org.apache.commons.io.FilenameUtils
+import shell.{ClocFileType, ClocCommand}
 import util.matching.Regex
 import io.Source
 

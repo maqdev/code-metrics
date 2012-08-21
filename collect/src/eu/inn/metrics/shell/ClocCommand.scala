@@ -29,11 +29,14 @@
  *  Magomed Abdurakhmanov (maga@inn.eu)
  */
 
-package eu.inn.metrics
+package eu.inn.metrics.shell
 
+import eu.inn.metrics.diff.DiffHandlerType
 import scala.collection.mutable
 import scala.util.control.Breaks._
 import util.matching.Regex
+import eu.inn.metrics._
+import eu.inn.metrics.diff.DiffHandlerType
 
 class ClocCommand(clocPath: String = "cloc", workDirectory: String = "")
   extends ProcessCommandBase(workDirectory, if (clocPath.isEmpty) "cloc" else clocPath) {
@@ -171,7 +174,7 @@ class ClocCommand(clocPath: String = "cloc", workDirectory: String = "")
 
   def getLanguages(): mutable.MutableList[ClocFileType] = {
 
-    val regx : Regex = """(.*)\((.*)\)""".r
+    val regx: Regex = """(.*)\((.*)\)""".r
     var unparsedOutput = ""
 
     var result = mutable.MutableList[ClocFileType]()

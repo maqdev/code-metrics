@@ -29,9 +29,37 @@
  *  Magomed Abdurakhmanov (maga@inn.eu)
  */
 
-package eu.inn.metrics
+package eu.inn.metrics.shell
 
-import scala.Predef.String
-import scala.Int
+import sys.process.{ProcessIO, Process}
+import scala.{Some, None, Seq}
+import java.io.OutputStream
+import concurrent.SyncVar
 
-case class ProcessCommandException(Message: String, resultCode: Int) extends Exception(Message)
+abstract class ProcessCommandBase(workDirectory: String, commandName: String) {
+  val eol = sys.props("line.separator")
+
+  protected def run(args: Seq[String], f: String => Unit, os: Option[SyncVar[OutputStream]], extraEnv: (String, String)*) {
+
+    var errorLines: String = ""
+
+    val pio = new ProcessIO(
+      stdin => os match {
+        case Some(x) => x.put(stdin)
+        case None => stdin.close()
+      },
+      stdout => scala.io.Source.fromInputStream(stdout).getLines().foreach(f),
+      stderr => scala.io.Source.fromInputStream(stderr).getLines().foreach(error => errorLines += error + eol)
+    )
+
+    val currentDir = if (workDirectory.isEmpty) sys.props("user.dir") else workDirectory
+    val cwd = new java.io.File(currentDir)
+
+    val process = Process(commandName +: args, cwd, extraEnv: _*).run(pio)
+    val result = process.exitValue()
+
+    if (!errorLines.isEmpty || result != 0)
+      throw ProcessCommandException(errorLines, result)
+  }
+}
+

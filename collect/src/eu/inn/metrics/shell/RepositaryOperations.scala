@@ -29,23 +29,28 @@
  *  Magomed Abdurakhmanov (maga@inn.eu)
  */
 
-package eu.inn.metrics
+package eu.inn.metrics.shell
 
 import collection.mutable
 import org.joda.time.format.DateTimeFormat
 import util.matching._
 import java.io.OutputStream
 import concurrent.SyncVar
+import eu.inn.metrics._
+import scala.Some
+import eu.inn.metrics.CollectMetricsConfig
+import eu.inn.metrics.FileMetrics
+import scala.Some
 
-class RepositaryOperations(config : CollectMetricsConfig) extends ProcessCommandBase(config.inputDirectory, "git") {
+class RepositaryOperations(config: CollectMetricsConfig) extends ProcessCommandBase(config.inputDirectory, "git") {
 
   def gitVersion() = {
-    var version = GitVersion(0,0,0,0)
+    var version = GitVersion(0, 0, 0, 0)
 
-    val regx : Regex = """git version (\d+)\.(\d+)\.(\d+)\.(\d+)(.*)""".r
+    val regx: Regex = """git version (\d+)\.(\d+)\.(\d+)\.(\d+)(.*)""".r
     var unparsedOutput = ""
 
-    val parse = (s : String) => {
+    val parse = (s: String) => {
       val o = regx.findFirstMatchIn(s)
       if (!o.isEmpty)
         version = GitVersion(o.get.group(1).toInt, o.get.group(2).toInt, o.get.group(3).toInt, o.get.group(4).toInt, o.get.group(5))
@@ -63,11 +68,11 @@ class RepositaryOperations(config : CollectMetricsConfig) extends ProcessCommand
   }
 
   def originUrl() = {
-    val regx : Regex = """origin\s*(.*)://(?:.*@)?(.*?)(\s*)\(fetch\)""".r
+    val regx: Regex = """origin\s*(.*)://(?:.*@)?(.*?)(\s*)\(fetch\)""".r
     var unparsedOutput = ""
 
-    var result : String = ""
-    val parse = (s : String) => {
+    var result: String = ""
+    val parse = (s: String) => {
       val o = regx.findFirstMatchIn(s)
       if (!o.isEmpty)
         result = o.get.group(2)
@@ -84,7 +89,7 @@ class RepositaryOperations(config : CollectMetricsConfig) extends ProcessCommand
     result
   }
 
-  def fetchCommitLog() : Seq[GitCommit] = {
+  def fetchCommitLog(): Seq[RepositaryCommit] = {
 
     /*
     executed command:
@@ -94,30 +99,30 @@ class RepositaryOperations(config : CollectMetricsConfig) extends ProcessCommand
     23873339243c520fbac496aa40326fcde62bab1a; Magomed Abdurakhmanov; maqdev@gmail.com; 2012-08-13 09:25:51 +0200; a2ee1e8b0298acfd81a4ae15f288c77315153343;
     */
 
-    val regx : Regex = """(.*); (.*); (.*); (.*); (.*)?;""".r
+    val regx: Regex = """(.*); (.*); (.*); (.*); (.*)?;""".r
     var unparsedOutput = ""
 
-    var result = mutable.MutableList[GitCommit]()
+    var result = mutable.MutableList[RepositaryCommit]()
 
     val fmt = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss Z")
 
-    val parse = (s : String) => {
+    val parse = (s: String) => {
       val o = regx.findFirstMatchIn(s)
       if (!o.isEmpty) {
         val dt = org.joda.time.DateTime.parse(o.get.group(4), fmt)
         val parent_hashes = o.get.group(5).split(" ")
 
         val commitType = if (parent_hashes.length == 2 && parent_hashes(0) != parent_hashes(1) && !parent_hashes(1).isEmpty)
-          GitCommitType.MERGE
+          RepositaryCommitType.MERGE
         else
-          GitCommitType.NORMAL
+          RepositaryCommitType.NORMAL
 
-        result += GitCommit(o.get.group(1), o.get.group(2), o.get.group(3), commitType, dt)
+        result += RepositaryCommit(o.get.group(1), o.get.group(2), o.get.group(3), commitType, dt)
       }
       else {
         unparsedOutput += s + eol
       }
-    } : Unit
+    }: Unit
 
     val cmd = List("log", "--all", """--pretty=format:%H; %an; %ae; %ai; %P;""")
     run(cmd, parse, None)
@@ -128,8 +133,8 @@ class RepositaryOperations(config : CollectMetricsConfig) extends ProcessCommand
     result.toSeq
   }
 
-  def fetchCommitMetrics(commit: GitCommit, getMetrics: (String, String, String) => FileMetrics) : Seq[FileMetrics] = {
-    val regxFirstLine : Regex = """(.*);""".r
+  def fetchCommitMetrics(commit: RepositaryCommit, getMetrics: (String, String, String) => FileMetrics): Seq[FileMetrics] = {
+    val regxFirstLine: Regex = """(.*);""".r
     var unparsedOutput = ""
     var hash = ""
 
@@ -172,15 +177,14 @@ class RepositaryOperations(config : CollectMetricsConfig) extends ProcessCommand
             unparsedOutput += s + eol;
         }
       }
-    } : Unit
+    }: Unit
 
     val diffToolCmd = config.diffwrapperCmd;
 
     val cmd = List("show", "--ext-diff", """--pretty=format:%H;""", commit.hash)
     var os = new SyncVar[OutputStream]
-    try
-    {
-      run(cmd, (s : String) => parse(s, os), Some(os), ("GIT_EXTERNAL_DIFF" -> diffToolCmd))
+    try {
+      run(cmd, (s: String) => parse(s, os), Some(os), ("GIT_EXTERNAL_DIFF" -> diffToolCmd))
     }
     finally {
       if (os.isSet)
