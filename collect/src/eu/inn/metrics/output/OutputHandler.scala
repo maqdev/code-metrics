@@ -31,10 +31,12 @@
 
 package eu.inn.metrics.output
 
-import eu.inn.metrics.{RepositaryCommit, FileMetrics}
+import eu.inn.metrics.{FileTypeList, RepositaryCommit, FileMetrics}
 import eu.inn.metrics.shell.{GitVersion}
 
 trait OutputHandler {
+  def fetchTypeList(ftl: FileTypeList)
+
   def processingFile(fileName: String, oldFileName: String, newFileName: String)
 
   def setProgress(current: Int, maximum: Int)
@@ -45,5 +47,5 @@ trait OutputHandler {
 
   def repositaryUrl(url: String)
 
-  def commit(c: RepositaryCommit)
+  def commit(c: RepositaryCommit) : Boolean
 }

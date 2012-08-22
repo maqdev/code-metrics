@@ -31,11 +31,9 @@
 
 package eu.inn.metrics.shell
 
-import eu.inn.metrics.diff.DiffHandlerType
 import scala.collection.mutable
 import scala.util.control.Breaks._
 import util.matching.Regex
-import eu.inn.metrics._
 import eu.inn.metrics.diff.DiffHandlerType
 
 class ClocCommand(clocPath: String = "cloc", workDirectory: String = "")

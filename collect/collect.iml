@@ -4,7 +4,7 @@
     <facet type="scala" name="Scala">
       <configuration>
         <option name="compilerLibraryLevel" value="Global" />
-        <option name="compilerLibraryName" value="scala-compiler" />
+        <option name="compilerLibraryName" value="org.scala-lang:scala-compiler:2.9.1" />
         <option name="fsc" value="true" />
       </configuration>
     </facet>
@@ -16,12 +16,14 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" scope="PROVIDED" name="scala-compiler" level="application" />
-    <orderEntry type="library" name="scala-library" level="application" />
-    <orderEntry type="library" name="com.github.scopt:scopt_2.9.2:2.1.0" level="project" />
     <orderEntry type="library" name="joda-time:joda-time:2.1" level="project" />
     <orderEntry type="library" name="org.joda:joda-convert:1.2" level="project" />
     <orderEntry type="library" name="commons-io:commons-io:2.3" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="org.scala-lang:scala-compiler:2.9.1" level="application" />
+    <orderEntry type="library" name="org.scala-lang:scala-library:2.9.1" level="application" />
+    <orderEntry type="library" name="com.github.scopt:scopt_2.9.1:2.1.0" level="project" />
+    <orderEntry type="library" name="scalaquery_2.9.1-0.10.0-M1" level="project" />
+    <orderEntry type="library" name="postgresql:postgresql:9.1-901.jdbc4" level="project" />
   </component>
 </module>
 

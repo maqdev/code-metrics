@@ -32,12 +32,14 @@
 package eu.inn.metrics
 
 import diff.DiffHandlerType
-import scala.collection._
+import collection._
+import mutable.ArrayBuffer
 import scala.{Seq, List}
 import org.apache.commons.io.FilenameUtils
 import shell.{ClocFileType, ClocCommand}
 import util.matching.Regex
 import io.Source
+import scala.Some
 
 class FileTypeList(fileTypeRegexList: String, clocCmd: String) {
 
@@ -65,12 +67,18 @@ class FileTypeList(fileTypeRegexList: String, clocCmd: String) {
     default
   }
 
+  def append(f : FileCategoryRegex) {
+    //val index = sortedFileTypeRegexList.indexWhere(p => p.priority > f.priority)
+    //sortedFileTypeRegexList.insert(if (index < 0) 0 else index, f)
+    sortedFileTypeRegexList += f
+  }
+
   /*
   * File format:
   * category|*language|*handler_type|regular_expression
   *
   * */
-  def parseFileCategoryRegexLine (s: String) = {
+  private def parseFileCategoryRegexLine (s: String) = {
     val a = s.split('|').toArray
     priority -= 1
     val category = a(0)
@@ -79,10 +87,15 @@ class FileTypeList(fileTypeRegexList: String, clocCmd: String) {
     val regex = a(3)
     FileCategoryRegex(category, new Regex(regex), priority, handler, language)
   }
-  var priority = 0
+  private var priority = 0
 
-  def loadFileCategoryRegex (): Seq[FileCategoryRegex] = {
-    Source.fromFile(fileTypeRegexList).getLines().map(s => parseFileCategoryRegexLine(s)).toSeq
+  private def loadFileCategoryRegex (): ArrayBuffer[FileCategoryRegex] = {
+    val r = ArrayBuffer[FileCategoryRegex]()
+
+    if (fileTypeRegexList.isEmpty) ArrayBuffer[FileCategoryRegex]() else
+      Source.fromFile(fileTypeRegexList).getLines().map(s => r += parseFileCategoryRegexLine(s))
+
+    r
   }
 
 
@@ -112,7 +125,7 @@ class FileTypeList(fileTypeRegexList: String, clocCmd: String) {
   }
   */
 
-  def loadFileMap() = {
+  private def loadFileMap() = {
 
     val cloc = new ClocCommand(clocCmd)
     val types = cloc.getLanguages()

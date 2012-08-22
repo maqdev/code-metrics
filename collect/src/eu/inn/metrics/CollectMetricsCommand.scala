@@ -31,49 +31,10 @@
 
 package eu.inn.metrics
 
-import diff.DiffWrapper
-import output.OutputHandler
-import eu.inn.metrics.shell.{RepositaryOperations}
+import scala.Enumeration
 
-class ProcessRepositary (config: CollectMetricsConfig, outputHandler : OutputHandler) {
 
-  def run() {
-    val git = new RepositaryOperations(config)
-
-    outputHandler.gitVersion(git.gitVersion())
-    outputHandler.repositaryUrl(git.originUrl())
-
-    if (!config.onlyInit) {
-      val fileTypeList = new FileTypeList(config.fileCategoryRegexPath, config.clocCmd)
-
-      outputHandler.fetchTypeList(fileTypeList)
-
-      val log = git.fetchCommitLog()
-      val size = log.size
-      var i = 0
-
-      outputHandler.setProgress(i, size)
-      for (r <- log) {
-        if (outputHandler.commit(r)) {
-          if (r.commitType == RepositaryCommitType.NORMAL) {
-
-            val metrics = git.fetchCommitMetrics(r,
-              (fileName: String, oldFileName: String, newFileName: String) =>
-              {
-                outputHandler.processingFile(fileName, oldFileName, newFileName)
-                val dw = new DiffWrapper(config.clocCmd, fileTypeList)
-                dw.getMetrics(fileName, oldFileName, newFileName)
-              }
-            )
-
-            for (m <- metrics)
-              outputHandler.fileMetrics(m)
-          }
-        }
-
-        i += 1
-        outputHandler.setProgress(i, size)
-      }
-    }
-  }
+object CollectMetricsCommand extends Enumeration {
+  val ALL = Value("")
+  val INIT = Value("init")
 }

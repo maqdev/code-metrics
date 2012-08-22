@@ -31,19 +31,20 @@
 
 package eu.inn.metrics.output
 
-import eu.inn.metrics.{RepositaryCommit, FileMetrics}
+import eu.inn.metrics.{FileTypeList, RepositaryCommit, FileMetrics}
 import eu.inn.metrics.shell.{GitVersion}
 
 class StdOutputHandler extends OutputHandler {
-  var progress = 0
+  var progress = -1
 
   def repositaryUrl(url: String) {
-    println(url)
+    println("Found repositary: " + url)
   }
 
-  def commit(c: RepositaryCommit) {
+  def commit(c: RepositaryCommit) = {
     println("-------------------------------")
     println("" + c.dt + " " + c.commitType + " " + c.name + " " + c.email + " " + c.hash)
+    true
   }
 
   def gitVersion(version: GitVersion) {
@@ -64,10 +65,12 @@ class StdOutputHandler extends OutputHandler {
   }
 
   def setProgress(current: Int, maximum: Int) {
-    val percent = current * 100 / maximum
+    val percent = (current * 100) / maximum
     if (percent != progress) {
       println("Completed " + percent + "%")
     }
     progress = percent
   }
+
+  def fetchTypeList(ftl: FileTypeList) {}
 }

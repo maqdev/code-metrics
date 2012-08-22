@@ -31,7 +31,7 @@
 
 package eu.inn.metrics
 
-import output.StdOutputHandler
+import output.{DatabaseOutputHandler, StdOutputHandler}
 import scala.collection.Seq
 import shell.ProcessCommandException
 
@@ -41,8 +41,8 @@ object CollectMetrics {
     try {
       val parser = new scopt.immutable.OptionParser[CollectMetricsConfig]("collect", "0.0") {
         def options = Seq(
-          opt("i", "input-dir", "inpit git repositary directory (local)") {
-            (v: String, c: CollectMetricsConfig) => c.copy(inputDirectory = v)
+          opt("i", "init-only", "only perform initial step") {
+            (v: String, c: CollectMetricsConfig) => c.copy(onlyInit = v.toBoolean)
           } ,
 
           opt("d", "diffwrapper-cmd", "diffwrapper path") {
@@ -55,19 +55,34 @@ object CollectMetrics {
 
           opt("g", "categories", "path to file with list of category regex") {
             (v: String, c: CollectMetricsConfig) => c.copy(fileCategoryRegexPath = v)
-          }
+          } ,
+
+          opt("b", "db", "output to db. Specify as 'url|driver' (jdbc url and driver's are used" ) {
+            (v: String, c: CollectMetricsConfig) => c.copy(outputDb = v)
+          } ,
+
+          arg("<repositary_path>", "local path to git repositary directory") { (v: String, c: CollectMetricsConfig)
+            => c.copy(inputDirectory = v) }
+
         )
       }
 
       // parser.parse returns Option[C]
-      parser.parse(args, CollectMetricsConfig()) map {
+      parser.parse(args, CollectMetricsConfig("")) map {
         config =>
 
           if (config.inputDirectory.isEmpty) {
-            parser.toString()
+            println(parser.toString())
           }
           else {
-            val o = new StdOutputHandler()
+            val o = if(config.outputDb.isEmpty) new StdOutputHandler() else {
+              val v = config.outputDb.split('|')
+              if (v.length != 2) {
+                throw new RuntimeException("db parameter is incorrect")
+              }
+              new DatabaseOutputHandler(v(0), v(1))
+            }
+
             val r = new ProcessRepositary(config, o)
             r.run()
           }

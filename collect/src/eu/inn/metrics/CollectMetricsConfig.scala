@@ -31,5 +31,7 @@
 
 package eu.inn.metrics
 
-case class CollectMetricsConfig(inputDirectory: String = "", diffwrapperCmd: String = "xdiff.sh", clocCmd: String = "cloc",
-                                fileCategoryRegexPath : String = "")
+case class CollectMetricsConfig(inputDirectory: String, diffwrapperCmd: String = "xdiff.sh", clocCmd: String = "cloc",
+                                fileCategoryRegexPath : String = "",
+                                outputDb: String = "",
+                                onlyInit: Boolean = false)
