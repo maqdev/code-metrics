@@ -287,7 +287,7 @@ create table metric
     file_id int not null,
     value int not null,
     constraint fk_metric__commt foreign key (commt_id) references commt(commt_id),
-    constraint fk_metric__metric_type foreign key (metric_type_id) references metric_type(metric_type_id)
+    constraint fk_metric__metric_type foreign key (metric_type_id) references metric_type(metric_type_id),
     constraint fk_metric__file foreign key (file_id) references file(file_id)
 );
 
