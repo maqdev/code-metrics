@@ -144,7 +144,7 @@ grant select, usage on file_type_id_seq to codemetrics;
 create table file_category
 (
     file_category_id int,
-    project_id int not null,
+    project_id int null,
     name varchar(120) not null,
     regex varchar(4096) not null,
     priority int not null,
@@ -217,7 +217,7 @@ create table file
 );
 
 grant select,insert,update,delete on file to codemetrics_admin;
-grant select, insert on file to codemetrics;
+grant select,insert,update,delete on file to codemetrics;
 grant select on file to codemetrics_web;
 
 create sequence file_id_seq;

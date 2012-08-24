@@ -35,7 +35,7 @@ import eu.inn.metrics._
 import eu.inn.metrics.FileMetrics
 import shell.{ClocFileWasIgnoredException, ProcessCommandException, ClocCommand}
 
-class ClocDiffHandler(clocPath: String, fileName: String, oldFilePath: String, newFilePath: String, category: String, language: String, extension: String)
+class ClocDiffHandler(clocPath: String, fileName: String, oldFilePath: String, newFilePath: String, category: Option[String], language: String, extension: String)
   extends DiffHandlerBase(fileName, oldFilePath, newFilePath, category, language) {
 
   override def run(): FileMetrics = {

@@ -44,16 +44,16 @@ import scala.Some
 class FileTypeList(fileTypeRegexList: String, clocCmd: String) {
 
   val defaultFileTypesMap = loadFileMap()
-  val sortedFileTypeRegexList = loadFileCategoryRegex().sortBy(f => - f.priority)
+  val sortedFileTypeRegexList = loadFileCategoryRegex(fileTypeRegexList).sortBy(f => - f.priority)
 
-  case class FileTypeResult(handlerType : DiffHandlerType.Value, language: String, extension: String, category: String)
+  case class FileTypeResult(handlerType : DiffHandlerType.Value, language: String, extension: String, category: Option[String])
 
   def getFileType(fileName: String): FileTypeResult = {
     val ext = FilenameUtils.getExtension(fileName)
 
     val default = defaultFileTypesMap.get(ext) match {
-      case Some(s) => FileTypeResult(s.diffHandlerType, s.language, ext, s.language)
-      case None => FileTypeResult(DiffHandlerType.BINARY, ext, ext, ext)
+      case Some(s) => FileTypeResult(s.diffHandlerType, s.language, ext, None)
+      case None => FileTypeResult(DiffHandlerType.BINARY, ext, ext, None)
     }
 
     for (ft <- sortedFileTypeRegexList)
@@ -61,7 +61,7 @@ class FileTypeList(fileTypeRegexList: String, clocCmd: String) {
 
         val handler = ft.diffHandlerType.getOrElse(default.handlerType)
         val language = ft.language.getOrElse(default.language)
-        return FileTypeResult(handler, language, ext, ft.category)
+        return FileTypeResult(handler, language, ext, Some(ft.category))
       }
 
     default
@@ -89,12 +89,13 @@ class FileTypeList(fileTypeRegexList: String, clocCmd: String) {
   }
   private var priority = 0
 
-  private def loadFileCategoryRegex (): ArrayBuffer[FileCategoryRegex] = {
+  private def loadFileCategoryRegex (path: String): ArrayBuffer[FileCategoryRegex] = {
     val r = ArrayBuffer[FileCategoryRegex]()
 
-    if (fileTypeRegexList.isEmpty) ArrayBuffer[FileCategoryRegex]() else
-      Source.fromFile(fileTypeRegexList).getLines().map(s => r += parseFileCategoryRegexLine(s))
-
+    if (path.isEmpty)
+      ArrayBuffer[FileCategoryRegex]()
+    else
+      Source.fromFile(path).getLines().foreach(s => r += parseFileCategoryRegexLine(s))
     r
   }
 

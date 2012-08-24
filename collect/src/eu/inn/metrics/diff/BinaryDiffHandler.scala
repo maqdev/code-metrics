@@ -31,6 +31,6 @@
 
 package eu.inn.metrics.diff
 
-class BinaryDiffHandler(fileName: String, oldFilePath: String, newFilePath: String, category: String, language: String) extends
+class BinaryDiffHandler(fileName: String, oldFilePath: String, newFilePath: String, category: Option[String], language: String) extends
 DiffHandlerBase(fileName, oldFilePath, newFilePath, category, language) {
 }

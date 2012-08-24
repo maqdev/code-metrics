@@ -90,9 +90,9 @@ class DatabaseOutputHandler(url: String, driver: String) extends OutputHandler {
     def * = fileTypeId ~ name
   }
 
-  val FileCategory = new Table[(Int, Int, String, String, Int, Option[Int], Option[String])]("file_category") {
+  val FileCategory = new Table[(Int, Option[Int], String, String, Int, Option[Int], Option[String])]("file_category") {
     def fileCategoryId  = column[Int]("file_category_id", O PrimaryKey, O AutoInc)
-    def projectId = column[Int]("project_id")
+    def projectId = column[Option[Int]]("project_id")
     def name = column[String]("name")
     def regex = column[String]("regex")
     def priority = column[Int]("priority")
@@ -126,7 +126,7 @@ class DatabaseOutputHandler(url: String, driver: String) extends OutputHandler {
 
   var progress = -1
   var currentProjectId : Option[Int] = None
-  var authorAliasMap = {
+  lazy val authorAliasMap = {
     val m = scala.collection.mutable.Map[String, Int]()
     db withSession { implicit session : Session =>
       val q = for {aa <- AuthorAlias} yield aa.*
@@ -151,7 +151,7 @@ class DatabaseOutputHandler(url: String, driver: String) extends OutputHandler {
     }
   }
 
-  var fileTypeMap = {
+  lazy val fileTypeMap = {
     val m = scala.collection.mutable.Map[String, Int]()
     db withSession { implicit session : Session =>
       val q = for {ft <- FileType} yield ft.*
@@ -161,6 +161,7 @@ class DatabaseOutputHandler(url: String, driver: String) extends OutputHandler {
     }
     m
   }
+
   private def getFileTypeId(fileTypeName: String) : Int = {
     val r = fileTypeMap.get(fileTypeName)
     if (r.isDefined)
@@ -174,7 +175,7 @@ class DatabaseOutputHandler(url: String, driver: String) extends OutputHandler {
     }
   }
 
-  var metricTypeMap = {
+  lazy val metricTypeMap = {
     val m = scala.collection.mutable.Map[String, Int]()
     db withSession { implicit session : Session =>
       val q = for {ft <- MetricType} yield ft.*
@@ -197,25 +198,30 @@ class DatabaseOutputHandler(url: String, driver: String) extends OutputHandler {
     }
   }
 
-  var fileMap = {
+  lazy val fileMap = {
     val m = scala.collection.mutable.Map[String, (Int, Option[Int])]()
     db withSession { implicit session : Session =>
-      val q = for {ft <- File} yield ft.path ~ ft.fileId ~ ft.fileCategoryId
+      val q = for {ft <- File if ft.projectId === currentProjectId} yield ft.path ~ ft.fileId ~ ft.fileCategoryId
       q.foreach {
         case (path, fileId, fileCategoryId) => m += (path -> (fileId, fileCategoryId))
       }
     }
     m
   }
+
+  def fixFileCategory(implicit session: Session, path: String, r: (Int, Option[Int]), fileCategoryId : Option[Int]){
+    if (r._2 != fileCategoryId) {
+      println("Updating category for file: " + path + " to " + fileCategoryId)
+      val upd = File.where(_.fileId === r._1.bind).map(_.fileCategoryId).update(fileCategoryId)
+    }
+  }
+
   private def getFileId(fileTypeId: Int, fileCategoryId: Option[Int], path: String) : Int = {
     val r = fileMap.get(path)
 
     db withSession { implicit session : Session =>
       if (r.isDefined) {
-        if (r.get._2 != fileCategoryId) {
-          println("Updating category for file: " + path + " to " + fileCategoryId)
-          val upd = File.where(_.fileId === r.get._1.bind).map(_.fileCategoryId).update(fileCategoryId)
-        }
+        fixFileCategory(session, path, r.get, fileCategoryId)
         return r.get._1
       }
 
@@ -278,8 +284,17 @@ class DatabaseOutputHandler(url: String, driver: String) extends OutputHandler {
 
     println("Updating db for: " + metrics.fileName)
     val fileTypeId = getFileTypeId(metrics.language)
-    val fileCategoryId = getFileCategoryId(metrics.category)
-    if (fileCategoryId.isEmpty) println("Category " + metrics.category + " is not found in database, leaving it empty")
+
+    val fileCategoryId : Option[Int] =
+      if (metrics.category.isDefined) {
+        val fcid = getFileCategoryId(metrics.category.get)
+        if (fcid.isEmpty)
+          println("Category " + metrics.category.get + " is not found in database, leaving it empty")
+        fcid
+      }
+    else
+      None
+
     val fileId = getFileId(fileTypeId, fileCategoryId, metrics.fileName)
     for ((key, value) <- metrics.metrics) {
       val metricTypeId = getMetricTypeId(key.toString)
@@ -312,8 +327,9 @@ class DatabaseOutputHandler(url: String, driver: String) extends OutputHandler {
     db withSession { implicit session : Session =>
 
       val q = for {
-        Join (fc, ft) <- FileCategory leftJoin FileType on (_.fileTypeId === _.fileTypeId)// if fc.projectId === currentProjectId.bind
+        Join (fc, ft) <- FileCategory leftJoin FileType on (_.fileTypeId === _.fileTypeId)
         _ <- Query orderBy fc.priority
+        if (fc.projectId === currentProjectId.bind) || (fc.projectId.isNull)
       } yield fc.fileCategoryId ~ fc.name ~ fc.regex ~ fc.diffHandler ~ ft.name ~ fc.priority
 
       q.foreach {
@@ -326,6 +342,15 @@ class DatabaseOutputHandler(url: String, driver: String) extends OutputHandler {
             if (fileTypeName.isEmpty) None else Some(fileTypeName)) //how is this will be handled
           )
           fileCategoryMap += (name -> fileCategoryId)
+      }
+
+      println("Updating categories for the files...")
+      for ((key,value) <- fileMap) {
+        val ft = ftl.getFileType(key)
+        if (ft.category.isDefined) {
+          val fileCategoryId = getFileCategoryId(ft.category.get)
+          fixFileCategory(session, key, value, fileCategoryId)
+        }
       }
     }
   }

@@ -53,7 +53,7 @@ class StdOutputHandler extends OutputHandler {
 
   def fileMetrics(metrics: FileMetrics) {
     println(metrics.fileName)
-    println("category = " + metrics.category)
+    println("category = " + metrics.category.getOrElse("<empty>"))
     println("language = " + metrics.language)
     for ((key, value) <- metrics.metrics)
       println(key + " = " + value)

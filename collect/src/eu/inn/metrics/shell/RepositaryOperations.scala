@@ -67,14 +67,14 @@ class RepositaryOperations(config: CollectMetricsConfig) extends ProcessCommandB
   }
 
   def originUrl() = {
-    val regx: Regex = """origin\s*(.*)://(?:.*@)?(.*?)(\s*)\(fetch\)""".r
+    val regx: Regex = """origin\s*(?:.*://)?(?:.*@)?(.*?)(\s*)\(fetch\)""".r
     var unparsedOutput = ""
 
     var result: String = ""
     val parse = (s: String) => {
       val o = regx.findFirstMatchIn(s)
       if (!o.isEmpty)
-        result = o.get.group(2)
+        result = o.get.group(1)
       else
         unparsedOutput += s + eol
     }

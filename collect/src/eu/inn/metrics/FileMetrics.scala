@@ -33,4 +33,4 @@ package eu.inn.metrics
 
 import collection.mutable
 
-case class FileMetrics(fileName: String, category: String, language: String, metrics: mutable.Map[MetricType.Value, Int])
+case class FileMetrics(fileName: String, category: Option[String], language: String, metrics: mutable.Map[MetricType.Value, Int])
