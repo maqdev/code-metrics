@@ -10,9 +10,9 @@
       <element id="extracted-dir" path="/opt/idea-jars/scala-library-2.9.1.jar" path-in-jar="/" />
       <element id="extracted-dir" path="$PROJECT_DIR$/lib/scopt_2.9.1-2.1.0.jar" path-in-jar="/" />
       <element id="extracted-dir" path="$PROJECT_DIR$/lib/joda-convert-1.2.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$USER_HOME$/Downloads/scalaquery_2.9.1-0.10.0-M1.jar" path-in-jar="/" />
       <element id="extracted-dir" path="$PROJECT_DIR$/lib/commons-io-2.3.jar" path-in-jar="/" />
       <element id="extracted-dir" path="$PROJECT_DIR$/lib/joda-time-2.1.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/lib/scalaquery_2.9.1-0.10.0-M1.jar" path-in-jar="/" />
     </root>
   </artifact>
 </component>
