@@ -61,6 +61,10 @@ object CollectMetrics {
             (v: String, c: CollectMetricsConfig) => c.copy(outputDb = v)
           } ,
 
+          opt("l", "size-limit", "set limit of file size to process by cloc, default is 1Mb" ) {
+            (v: String, c: CollectMetricsConfig) => c.copy(clocFileSizeLimit = Some(v.toInt))
+          } ,
+
           arg("<repositary_path>", "local path to git repositary directory") { (v: String, c: CollectMetricsConfig)
             => c.copy(inputDirectory = v) }
 

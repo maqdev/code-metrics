@@ -34,4 +34,5 @@ package eu.inn.metrics
 case class CollectMetricsConfig(inputDirectory: String, diffwrapperCmd: String = "xdiff.sh", clocCmd: String = "cloc",
                                 fileCategoryRegexPath : String = "",
                                 outputDb: String = "",
-                                onlyInit: Boolean = false)
+                                onlyInit: Boolean = false,
+                                 clocFileSizeLimit: Option[Int] = Some(1024*1024))

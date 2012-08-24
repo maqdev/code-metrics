@@ -50,4 +50,5 @@ object MetricType extends Enumeration {
   val COMMENT_CHANGED = Value("!= comment")
   val COMMENT_UNCHANGED = Value("== comment")
   val FAILED = Value("failed")
+  val SIZE_LIMITED = Value("size limited")
 }

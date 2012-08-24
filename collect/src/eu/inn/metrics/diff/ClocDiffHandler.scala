@@ -34,13 +34,26 @@ package eu.inn.metrics.diff
 import eu.inn.metrics._
 import eu.inn.metrics.FileMetrics
 import shell.{ClocFileWasIgnoredException, ProcessCommandException, ClocCommand}
+import java.io.File
 
-class ClocDiffHandler(clocPath: String, fileName: String, oldFilePath: String, newFilePath: String, category: Option[String], language: String, extension: String)
+class ClocDiffHandler(clocPath: String, fileName: String, oldFilePath: String, newFilePath: String, category: Option[String], language: String, extension: String, clocFileSizeLimit: Option[Int])
   extends DiffHandlerBase(fileName, oldFilePath, newFilePath, category, language) {
 
   override def run(): FileMetrics = {
 
     val result = super.run()
+
+    val sizeOld = if (oldFilePath.isEmpty) 0 else (new File(oldFilePath)).length;
+    val sizeNew = if (newFilePath.isEmpty) 0 else (new File(newFilePath)).length;
+
+    if (clocFileSizeLimit.isDefined && (sizeOld > clocFileSizeLimit.get || sizeNew > clocFileSizeLimit.get)) {
+
+      val max = math.max(sizeOld, sizeNew)
+      val maxInt = if (max > Int.MaxValue) Int.MaxValue else max.toInt
+      result.metrics += (MetricType.SIZE_LIMITED -> maxInt)
+      return result
+    }
+
     val cmd = new ClocCommand(clocPath)
 
     try {

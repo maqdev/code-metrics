@@ -62,7 +62,7 @@ class ProcessRepositary (config: CollectMetricsConfig, outputHandler : OutputHan
               (fileName: String, oldFileName: String, newFileName: String) =>
               {
                 outputHandler.processingFile(fileName, oldFileName, newFileName)
-                val dw = new DiffWrapper(config.clocCmd, fileTypeList)
+                val dw = new DiffWrapper(config.clocCmd, fileTypeList, config.clocFileSizeLimit)
                 dw.getMetrics(fileName, oldFileName, newFileName)
               }
             )

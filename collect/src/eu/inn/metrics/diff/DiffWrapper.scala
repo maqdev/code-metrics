@@ -33,14 +33,14 @@ package eu.inn.metrics.diff
 
 import eu.inn.metrics.{FileMetrics, FileTypeList}
 
-class DiffWrapper(clocCmd: String, ftl: FileTypeList) {
+class DiffWrapper(clocCmd: String, ftl: FileTypeList, clocFileSizeLimit: Option[Int]) {
 
   def getMetrics(fileName: String, oldFilePath: String, newFilePath: String): FileMetrics = {
 
     val ft = ftl.getFileType(fileName);
 
     val h = ft.handlerType match {
-      case DiffHandlerType.CLOC => new ClocDiffHandler(clocCmd, fileName, oldFilePath, newFilePath, ft.category, ft.language, ft.extension)
+      case DiffHandlerType.CLOC => new ClocDiffHandler(clocCmd, fileName, oldFilePath, newFilePath, ft.category, ft.language, ft.extension, clocFileSizeLimit)
       case DiffHandlerType.BINARY => new BinaryDiffHandler(fileName, oldFilePath, newFilePath, ft.category, ft.language)
     }
 
