@@ -36,4 +36,5 @@ import scala.Enumeration
 object DiffHandlerType extends Enumeration {
   val CLOC = Value(1)
   val BINARY = Value(2)
+  val SKIP = Value(3)
 }

@@ -37,7 +37,7 @@ import shell.{ClocFileWasIgnoredException, ProcessCommandException, ClocCommand}
 import java.io.File
 
 class ClocDiffHandler(clocPath: String, fileName: String, oldFilePath: String, newFilePath: String, category: Option[String], language: String, extension: String, clocFileSizeLimit: Option[Int])
-  extends DiffHandlerBase(fileName, oldFilePath, newFilePath, category, language) {
+  extends BinaryDiffHandler(fileName, oldFilePath, newFilePath, category, language) {
 
   override def run(): FileMetrics = {
 

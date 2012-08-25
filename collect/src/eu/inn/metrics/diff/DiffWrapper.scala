@@ -42,6 +42,7 @@ class DiffWrapper(clocCmd: String, ftl: FileTypeList, clocFileSizeLimit: Option[
     val h = ft.handlerType match {
       case DiffHandlerType.CLOC => new ClocDiffHandler(clocCmd, fileName, oldFilePath, newFilePath, ft.category, ft.language, ft.extension, clocFileSizeLimit)
       case DiffHandlerType.BINARY => new BinaryDiffHandler(fileName, oldFilePath, newFilePath, ft.category, ft.language)
+      case DiffHandlerType.SKIP => new SkipDiffHandler(fileName, oldFilePath, newFilePath, ft.category, ft.language)
     }
 
     h.run()

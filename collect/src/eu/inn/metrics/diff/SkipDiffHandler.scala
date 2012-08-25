@@ -32,9 +32,14 @@
 package eu.inn.metrics.diff
 
 import java.io.File
-import eu.inn.metrics.{MetricType}
+import eu.inn.metrics.MetricType
 import eu.inn.metrics.FileMetrics
 
-abstract class DiffHandlerBase(fileName: String, oldFilePath: String, newFilePath: String, category: Option[String], language: String) {
-  def run(): FileMetrics
+class SkipDiffHandler(fileName: String, oldFilePath: String, newFilePath: String, category: Option[String], language: String) extends
+  DiffHandlerBase(fileName, oldFilePath, newFilePath, category, language) {
+
+  def run(): FileMetrics = {
+    val metrics = scala.collection.mutable.Map[MetricType.Value, Int]()
+    FileMetrics(fileName, category, language, metrics)
+  }
 }

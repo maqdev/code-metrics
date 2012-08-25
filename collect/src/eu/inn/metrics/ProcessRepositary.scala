@@ -44,11 +44,9 @@ class ProcessRepositary (config: CollectMetricsConfig, outputHandler : OutputHan
     val fileTypeList = new FileTypeList(config.fileCategoryRegexPath, config.clocCmd)
 
     outputHandler.repositaryUrl(git.originUrl())
+    outputHandler.fetchTypeList(fileTypeList)
 
     if (!config.onlyInit) {
-
-      outputHandler.fetchTypeList(fileTypeList)
-
       val log = git.fetchCommitLog()
       val size = log.size
       var i = 0
