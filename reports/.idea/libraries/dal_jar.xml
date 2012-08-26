@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="dal.jar">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/lib/dal.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

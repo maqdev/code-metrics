@@ -1,0 +1,26 @@
+@(data: Seq[TotalResultRow])
+
+@main("Totals") {
+
+<table border="1">
+    <thead><th>dt</th><th>+ loc</th><th>!= loc</th><th>authors</th><th>files</th></thead>
+    @for(rr <- data) {
+    <tr>
+        <td>@rr.dt</td>
+        <td>@rr.loc.newLoc</td>
+        <td>@rr.loc.changedLoc</td>
+        <td>
+            @for(a <- rr.authors) {
+                @a
+            }
+        </td>
+        <td>
+            @for(ft <- rr.fileTypes) {
+            @ft
+            }
+        </td>
+    </tr>
+    }
+</table>
+
+}

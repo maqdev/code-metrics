@@ -102,6 +102,7 @@ create table project
 	path varchar(120) not null,
 	is_deleted bool not null default false,
 	created timestamptz not null default now(),
+    exclude boolean not null default false,
 	constraint pk_project primary key (project_id)
 );
 
@@ -123,6 +124,7 @@ create table file_type
 (
     file_type_id int,
     name varchar(120) not null,
+    exclude boolean not null default false,
     constraint pk_file_type primary key (file_type_id)
 );
 
@@ -150,6 +152,7 @@ create table file_category
     priority int not null,
     file_type_id int null,
     diff_handler varchar(120) null,
+    exclude boolean not null default false,
    	constraint pk_file_category primary key (file_category_id),
     constraint fk_file_category__project foreign key (project_id) references project(project_id),
     constraint fk_file_category__file_type foreign key (file_type_id) references file_type(file_type_id)
@@ -237,6 +240,7 @@ create table commt
     author_id int not null,
     commt_type smallint not null,
     dt timestamptz not null,
+    exclude boolean not null default false,
     constraint pk_commt primary key (commt_id),
     constraint fk_commt__project foreign key (project_id) references project(project_id),
     constraint fk_commt__author foreign key (author_id) references author(author_id),

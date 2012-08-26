@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="org.scalaquery_scalaquery_2.9.1_0.10.0-M1">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../../tools/play-2.0.3/repository/cache/org.scalaquery/scalaquery_2.9.1/jars/scalaquery_2.9.1-0.10.0-M1.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

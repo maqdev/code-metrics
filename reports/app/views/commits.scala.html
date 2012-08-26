@@ -1,0 +1,18 @@
+@(authorName: String, period: String, dt: String, commits: Seq[CommitResultRow])
+
+@main(authorName + " / " + period + " / " + dt) {
+
+<h1>@authorName</h1>
+<p>@period / @dt</p>
+<table border="1">
+    <thead><th>hash</th><th>+ loc</th><th>!= loc</th>
+    </thead>
+    @for(c <- commits) {
+    <tr>
+        <td>@c.projectName @c.hash</td>
+        <td>@c.loc.newLoc</td>
+        <td>@c.loc.changedLoc</td>
+    </tr>
+    }
+</table>
+}

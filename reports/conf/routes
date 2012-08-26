@@ -1,0 +1,13 @@
+# Routes
+# This file defines all application routes (Higher priority routes first)
+# ~~~~
+
+# Home page
+GET     /                               controllers.Application.index
+GET     /totals/:period                 controllers.Application.totals(period)
+GET     /authors/:authorId/:period      controllers.Application.authors(authorId: Int, period)
+GET     /commits/:authorId/:period/:dt  controllers.Application.commits(authorId: Int, period, dt)
+
+
+# Map static resources from the /public folder to the /assets URL path
+GET     /assets/*file               controllers.Assets.at(path="/public", file)

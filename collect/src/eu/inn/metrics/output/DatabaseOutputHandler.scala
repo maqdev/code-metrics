@@ -31,7 +31,7 @@
 
 package eu.inn.metrics.output
 
-import eu.inn.metrics.{FileCategoryRegex, FileTypeList, RepositaryCommit, FileMetrics}
+import eu.inn.metrics._
 import eu.inn.metrics.shell.GitVersion
 import java.sql.Timestamp
 import util.matching.Regex
@@ -51,78 +51,8 @@ import org.scalaquery.ql.TypeMapper._
 import org.scalaquery.ql.extended.H2Driver.Implicit._
 import org.scalaquery.ql.extended.{ExtendedTable => Table}
 
-class DatabaseOutputHandler(url: String, driver: String) extends OutputHandler {
-
-  val db = Database.forURL(url, driver)
-
-  val Project = new Table[(Int, String, String)]("project") {
-    def projectId  = column[Int]("project_id", O PrimaryKey, O AutoInc)
-    def name = column[String]("name")
-    def path = column[String]("path")
-    def * = projectId ~ name ~ path
-  }
-
-  val Author = new Table[(Int, String)]("author") {
-    def authorId  = column[Int]("author_id", O PrimaryKey, O AutoInc)
-    def name = column[String]("name")
-    def * = authorId ~ name
-  }
-
-  val AuthorAlias = new Table[(Int, String)]("author_alias") {
-    def authorId  = column[Int]("author_id")
-    def email = column[String]("email", O PrimaryKey)
-    def * = authorId ~ email
-  }
-
-  val Commit = new Table[(Long, String, Int, Int, Int, Timestamp)]("commt") {
-    def commitId  = column[Long]("commt_id", O PrimaryKey, O AutoInc)
-    def hash = column[String]("hash")
-    def projectId = column[Int]("project_id")
-    def authorId = column[Int]("author_id")
-    def commitType = column[Int]("commt_type")
-    def dt = column[Timestamp]("dt")
-    def * = commitId ~ hash ~ projectId ~ authorId ~ commitType ~ dt
-  }
-
-  val FileType = new Table[(Int, String)]("file_type") {
-    def fileTypeId  = column[Int]("file_type_id", O PrimaryKey, O AutoInc)
-    def name = column[String]("name")
-    def * = fileTypeId ~ name
-  }
-
-  val FileCategory = new Table[(Int, Option[Int], String, String, Int, Option[Int], Option[String])]("file_category") {
-    def fileCategoryId  = column[Int]("file_category_id", O PrimaryKey, O AutoInc)
-    def projectId = column[Option[Int]]("project_id")
-    def name = column[String]("name")
-    def regex = column[String]("regex")
-    def priority = column[Int]("priority")
-    def fileTypeId = column[Option[Int]]("file_type_id")
-    def diffHandler = column[Option[String]]("diff_handler")
-    def * = fileCategoryId ~ projectId ~ name ~ regex ~ priority ~ fileTypeId ~ diffHandler
-  }
-
-  val File = new Table[(Int, Int, Int, Option[Int], String)]("file") {
-    def fileId  = column[Int]("file_id", O PrimaryKey, O AutoInc)
-    def projectId = column[Int]("project_id")
-    def fileTypeId = column[Int]("file_type_id")
-    def fileCategoryId = column[Option[Int]]("file_category_id")
-    def path = column[String]("path")
-    def * = fileId ~ projectId ~ fileTypeId ~ fileCategoryId ~ path
-  }
-
-  val MetricType = new Table[(Int, String)]("metric_type") {
-    def metricTypeId  = column[Int]("metric_type_id", O PrimaryKey, O AutoInc)
-    def name = column[String]("name")
-    def * = metricTypeId ~ name
-  }
-
-  val Metric = new Table[(Long, Int, Int, Int)]("metric") {
-    def commitId  = column[Long]("commt_id")
-    def metricTypeId = column[Int]("metric_type_id")
-    def fileId = column[Int]("file_id")
-    def value = column[Int]("value")
-    def * = commitId ~ metricTypeId ~ fileId ~ value
-  }
+class DatabaseOutputHandler(url: String, driver: String)
+  extends eu.inn.metrics.database.DAL(url, driver) with OutputHandler {
 
   var progress = -1
   var currentProjectId : Option[Int] = None

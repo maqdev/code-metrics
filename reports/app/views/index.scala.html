@@ -1,0 +1,19 @@
+@(authors:Seq[(Int, String, Seq[String])])
+
+@main("Welcome to Code Metrics") {
+    <a href='@routes.Application.totals("week")'>Totals (weekly)</a>
+    <a href='@routes.Application.totals("day")'>Totals (daily)</a>
+
+    <br/ >
+    Authors:
+    <table>
+    @for((id,name,emails) <- authors) {
+        <tr>
+            <td>@name</td>
+            <td><a href='@routes.Application.authors(id, "day")'>daily</a></td>
+            <td><a href='@routes.Application.authors(id, "week")'>weekly</a></td>
+            <td>@{ emails.foldLeft("") { (l:String,r:String) => l + ", " + r } substring 1 }</td>
+        </tr>
+    }
+    </table>
+}

@@ -1,0 +1,11 @@
+<component name="ArtifactManager">
+  <artifact type="jar" build-on-make="true" name="dal:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/dal_jar</output-path>
+    <root id="archive" name="dal.jar">
+      <element id="module-output" name="dal" />
+      <element id="directory" name="META-INF">
+        <element id="file-copy" path="$PROJECT_DIR$/dal/src/META-INF/MANIFEST.MF" />
+      </element>
+    </root>
+  </artifact>
+</component>

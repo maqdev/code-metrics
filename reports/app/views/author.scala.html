@@ -1,0 +1,28 @@
+@(authorId: Int, authorName: String, data: Seq[AuthorResultRow], period: String)
+
+@main(authorName) {
+
+<h1>@authorName</h1>
+<table border="1">
+    <thead><th>dt</th><th>+ loc</th><th>!= loc</th><th>file types</th><th>projects</th>
+    </thead>
+    @for(rr <- data) {
+    <tr>
+        <td><a href='@routes.Application.commits(authorId, period, rr.dt.toString)'>@rr.dt</a></td>
+        <td>@rr.loc.newLoc</td>
+        <td>@rr.loc.changedLoc</td>
+        <td>
+        @for((ft, loc) <- rr.fileTypes) {
+            @ft: [@loc.newLoc / @loc.changedLoc]
+        }
+        </td>
+        <td>
+        @for((pr, loc) <- rr.projects) {
+            @pr: [@loc.newLoc / @loc.changedLoc]
+        }
+        </td>
+    </tr>
+    }
+</table>
+
+}
