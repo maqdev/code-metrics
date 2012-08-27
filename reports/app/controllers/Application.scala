@@ -9,6 +9,8 @@ import collection.mutable
 import anorm.SqlRow
 import scala.Some
 import java.text.SimpleDateFormat
+import org.joda.time.format.{DateTimeFormat}
+import org.joda.time._
 
 
 case class Loc(newLoc: Int, changedLoc: Int) {
@@ -18,11 +20,12 @@ case class Loc(newLoc: Int, changedLoc: Int) {
 }
 case class TotalResultRow(dt: String, loc: Loc, authors: Set[String], fileTypes: Set[String])
 case class AuthorResultRow(dt: String, loc: Loc, fileTypes: Map[String, Loc], projects: Map[String, Loc])
-case class CommitResultRow(projectName: String, hash: String, loc: Loc)
+case class CommitFileStat(fileCategory: Option[String], loc: Loc, exclude: Boolean)
+case class CommitResultRow(projectName: String, hash: String, dt: String, loc: Loc, locExclude : Loc, exclude: Boolean, files: Map[String, CommitFileStat])
 
 object Helper {
 
-  def aggregate[X,Y](seq: Seq[X], f : (X, Option[Y]) => (Option[Y], Option[Y])) : Seq[Y] ={
+  def aggregate[X,Y](seq: Seq[X], f : (X, Option[Y]) => (Option[Y], Option[Y])) : Seq[Y] = {
 
     val l = new mutable.MutableList[Y]()
 
@@ -50,8 +53,9 @@ object Helper {
 
 object Application extends Controller {
 
-  val formatter = new SimpleDateFormat("yyyy-MM-dd")
-
+  val dateFmt = "yyyy-MM-dd"
+  val formatter = new SimpleDateFormat(dateFmt)
+  val jtFormatter = DateTimeFormat.forPattern(dateFmt)
 
   def index = Action {
     val query =
@@ -139,7 +143,35 @@ object Application extends Controller {
         }
       })
 
-      Ok(views.html.author(authorId, authorName, l, period))
+      val l2 = mutable.MutableList[Either[String,AuthorResultRow]]()
+      var prev : Option[AuthorResultRow] = None
+      for (r <- l){
+
+        if (prev.isDefined) {
+
+          val start =  jtFormatter.parseDateTime(prev.get.dt)
+          val end = jtFormatter.parseDateTime(r.dt)
+
+          period match {
+            case "week" => {
+              val p = Weeks.weeksBetween(start,end)
+              if (p.getWeeks() > 1) {
+                l2 += Left("no commits for " + p.getWeeks() + " weeks")
+              }
+            }
+            case "day" => {
+              val p = Days.daysBetween(start,end)
+              if (p.getDays() > 1) {
+                l2 += Left("no commits for " + p.getDays() + " days")
+              }
+            }
+          }
+        }
+        l2 += Right(r)
+        prev = Some(r)
+      }
+
+      Ok(views.html.author(authorId, authorName, l2, period))
     }
   }
 
@@ -191,7 +223,7 @@ object Application extends Controller {
 
     val query =
       """
-        |select p.name project_name, c.hash, mt.name as mt, sum(m.value) mt_val
+        |select p.name project_name, c.hash, c.dt, c.exclude, f.path, fc.name as file_category, (ft.exclude or coalesce(fc.exclude, false)) file_exclude, mt.name as mt, sum(m.value) mt_val
         |from commt c
         |join metric m on (c.commt_id = m.commt_id)
         |join metric_type mt on (m.metric_type_id = mt.metric_type_id)
@@ -200,12 +232,9 @@ object Application extends Controller {
         |join file_type ft on (f.file_type_id = ft.file_type_id)
         |left join file_category fc on (fc.file_category_id = f.file_category_id)
         |where (mt.name in ('!= loc', '+ loc'))
-        |and not c.exclude
-        |and not ft.exclude
-        |and not coalesce(fc.exclude, false)
         |and c.author_id = {author_id}
         |and date_trunc({period}, c.dt) = {dt}
-        |group by project_name, c.hash, mt
+        |group by project_name, c.hash, c.dt, c.exclude, f.path, fc.name, mt, file_exclude
         |order by project_name
       """.stripMargin
 
@@ -220,13 +249,23 @@ object Application extends Controller {
       val l = Helper.aggregate(q(), (row: SqlRow, a: Option[CommitResultRow]) => {
         val projectName = row[String]("project_name")
         val hash = row[String]("hash")
-        val loc = convLoc(row)
+        val dt = formatter.format(row[Date]("dt"))
+        val exclude = row[Boolean]("exclude")
+        val fileExclude = row[Boolean]("file_exclude")
+        val filePath = row[String]("path")
+        val fileCategory = row[Option[String]]("file_category")
+        val locCurr = convLoc(row)
+        val loc = if (exclude || fileExclude) Loc(0,0) else locCurr
+        val locExclude = if (exclude || fileExclude) locCurr else Loc(0,0)
 
         if (a.isEmpty || a.get.hash != hash) {
-          (a, Some(CommitResultRow(projectName, hash, loc)))
+          (a, Some(CommitResultRow(projectName, hash, dt, loc, locExclude, exclude, Map(filePath -> CommitFileStat(fileCategory, loc, fileExclude)))))
         } else {
           val prev = a.get
-          (Some(CommitResultRow(projectName, hash, prev.loc + loc)), None)
+          val lf = if (prev.files.contains(filePath)) {loc + prev.files.get(filePath).get.loc} else loc
+
+          (Some(CommitResultRow(projectName, hash, dt, prev.loc + loc, prev.locExclude + locExclude,
+            exclude, prev.files ++ Map(filePath -> CommitFileStat(fileCategory, lf, fileExclude)))), None)
         }
       })
 

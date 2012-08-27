@@ -1,7 +1,11 @@
-body { color: black; }
+body { color: black; font-family: verdana,tahoma,arial,helvetica; font-size: 10pt;  }
 h1 { color: #006295; }
 h2 { color: #006295; }
 
 table {text-align: center; border: 0px; border-collapse: collapse; border-spacing: 0px;}
 table td { padding: 4px; text-align: left; border: 1px #006295 solid;}
 table th { padding: 4px; text-align: left; border: 1px #fff solid; background: #006295; color: white; }
+
+table tr.exclude { color: gray; }
+span.commit-file { font-size: 8pt; }
+span.exclude { color: gray; }

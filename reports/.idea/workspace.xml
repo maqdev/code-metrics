@@ -2,18 +2,11 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="b583766e-d607-406c-b418-18c162b9d8df" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../.idea/artifacts/dal_jar.xml" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../dal/dal.iml" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../dal/src/META-INF/MANIFEST.MF" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../dal/src/eu/inn/metrics/database/DAL.scala" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/.idea/ant.xml" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/app/views/author.scala.html" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/app/views/commits.scala.html" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/app/views/total.scala.html" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../.idea/artifacts/collect_jar.xml" afterPath="$PROJECT_DIR$/../.idea/artifacts/collect_jar.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../.idea/modules.xml" afterPath="$PROJECT_DIR$/../.idea/modules.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../collect/collect.iml" afterPath="$PROJECT_DIR$/../collect/collect.iml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../collect/src/eu/inn/metrics/output/DatabaseOutputHandler.scala" afterPath="$PROJECT_DIR$/../collect/src/eu/inn/metrics/output/DatabaseOutputHandler.scala" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/app/controllers/Application.scala" afterPath="$PROJECT_DIR$/app/controllers/Application.scala" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/app/views/author.scala.html" afterPath="$PROJECT_DIR$/app/views/author.scala.html" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/app/views/commits.scala.html" afterPath="$PROJECT_DIR$/app/views/commits.scala.html" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/public/stylesheets/main.css" afterPath="$PROJECT_DIR$/public/stylesheets/main.css" />
     </list>
     <ignored path="reports.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -74,37 +67,18 @@
       <file leaf-file-name="Application.scala" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/app/controllers/Application.scala">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="205" column="0" selection-start="6437" selection-end="6437" vertical-scroll-proportion="0.16666667">
+            <state line="164" column="67" selection-start="5146" selection-end="5146" vertical-scroll-proportion="0.43758214">
               <folding>
                 <element signature="e#21#42#0" expanded="true" />
-                <element signature="e#646#1071#1" expanded="false" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="commits.scala.html" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/app/views/commits.scala.html">
+      <file leaf-file-name="application.conf" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/conf/application.conf">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="5" column="0" selection-start="154" selection-end="154" vertical-scroll-proportion="-3.125">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="author.scala.html" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/app/views/author.scala.html">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="25" column="15" selection-start="82" selection-end="723" vertical-scroll-proportion="-15.625">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="routes" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/conf/routes">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="8" column="72" selection-start="419" selection-end="419" vertical-scroll-proportion="0.0">
+            <state line="47" column="24" selection-start="1224" selection-end="1224" vertical-scroll-proportion="0.0">
               <folding />
             </state>
           </provider>
@@ -113,7 +87,16 @@
       <file leaf-file-name="main.css" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/public/stylesheets/main.css">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0">
+            <state line="11" column="0" selection-start="499" selection-end="499" vertical-scroll-proportion="0.0">
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="author.scala.html" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/app/views/author.scala.html">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="29" column="38" selection-start="1061" selection-end="1061" vertical-scroll-proportion="-18.125">
               <folding />
             </state>
           </provider>
@@ -143,13 +126,13 @@
       <list>
         <option value="$PROJECT_DIR$/conf/application.conf" />
         <option value="$PROJECT_DIR$/project/Build.scala" />
-        <option value="$PROJECT_DIR$/public/stylesheets/main.css" />
         <option value="$PROJECT_DIR$/app/views/main.scala.html" />
         <option value="$PROJECT_DIR$/app/views/index.scala.html" />
         <option value="$PROJECT_DIR$/app/views/total.scala.html" />
         <option value="$PROJECT_DIR$/conf/routes" />
-        <option value="$PROJECT_DIR$/app/views/author.scala.html" />
+        <option value="$PROJECT_DIR$/public/stylesheets/main.css" />
         <option value="$PROJECT_DIR$/app/views/commits.scala.html" />
+        <option value="$PROJECT_DIR$/app/views/author.scala.html" />
         <option value="$PROJECT_DIR$/app/controllers/Application.scala" />
       </list>
     </option>
@@ -169,7 +152,7 @@
     <ConfirmationsSetting value="0" id="Remove" />
   </component>
   <component name="ProjectReloadState">
-    <option name="STATE" value="2" />
+    <option name="STATE" value="0" />
   </component>
   <component name="ProjectView">
     <navigator currentView="ProjectPane" proportions="" version="1" splitterProportion="0.5">
@@ -367,8 +350,8 @@
     <property name="FullScreen" value="false" />
     <property name="MemberChooser.showClasses" value="true" />
     <property name="GoToClass.includeLibraries" value="false" />
-    <property name="options.splitter.details.proportions" value="0.2" />
     <property name="options.searchVisible" value="true" />
+    <property name="options.splitter.details.proportions" value="0.2" />
   </component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
@@ -384,6 +367,18 @@
         <option name="AntTarget" enabled="false" />
         <option name="BuildArtifacts" enabled="false" />
         <option name="Make" enabled="true" />
+        <option name="Maven.BeforeRunTask" enabled="false" />
+      </method>
+    </configuration>
+    <configuration default="true" type="Remote" factoryName="Remote">
+      <option name="USE_SOCKET_TRANSPORT" value="true" />
+      <option name="SERVER_MODE" value="false" />
+      <option name="SHMEM_ADDRESS" value="javadebug" />
+      <option name="HOST" value="localhost" />
+      <option name="PORT" value="5005" />
+      <method>
+        <option name="AntTarget" enabled="false" />
+        <option name="BuildArtifacts" enabled="false" />
         <option name="Maven.BeforeRunTask" enabled="false" />
       </method>
     </configuration>
@@ -405,15 +400,21 @@
         <option name="Maven.BeforeRunTask" enabled="false" />
       </method>
     </configuration>
-    <configuration default="true" type="Remote" factoryName="Remote">
-      <option name="USE_SOCKET_TRANSPORT" value="true" />
-      <option name="SERVER_MODE" value="false" />
-      <option name="SHMEM_ADDRESS" value="javadebug" />
-      <option name="HOST" value="localhost" />
-      <option name="PORT" value="5005" />
+    <configuration default="true" type="Applet" factoryName="Applet">
+      <module name="" />
+      <option name="MAIN_CLASS_NAME" />
+      <option name="HTML_FILE_NAME" />
+      <option name="HTML_USED" value="false" />
+      <option name="WIDTH" value="400" />
+      <option name="HEIGHT" value="300" />
+      <option name="POLICY_FILE" value="$APPLICATION_HOME_DIR$/bin/appletviewer.policy" />
+      <option name="VM_PARAMETERS" />
+      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
+      <option name="ALTERNATIVE_JRE_PATH" />
       <method>
         <option name="AntTarget" enabled="false" />
         <option name="BuildArtifacts" enabled="false" />
+        <option name="Make" enabled="true" />
         <option name="Maven.BeforeRunTask" enabled="false" />
       </method>
     </configuration>
@@ -442,24 +443,6 @@
       <envs />
       <properties />
       <listeners />
-      <method>
-        <option name="AntTarget" enabled="false" />
-        <option name="BuildArtifacts" enabled="false" />
-        <option name="Make" enabled="true" />
-        <option name="Maven.BeforeRunTask" enabled="false" />
-      </method>
-    </configuration>
-    <configuration default="true" type="Applet" factoryName="Applet">
-      <module name="" />
-      <option name="MAIN_CLASS_NAME" />
-      <option name="HTML_FILE_NAME" />
-      <option name="HTML_USED" value="false" />
-      <option name="WIDTH" value="400" />
-      <option name="HEIGHT" value="300" />
-      <option name="POLICY_FILE" value="$APPLICATION_HOME_DIR$/bin/appletviewer.policy" />
-      <option name="VM_PARAMETERS" />
-      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
-      <option name="ALTERNATIVE_JRE_PATH" />
       <method>
         <option name="AntTarget" enabled="false" />
         <option name="BuildArtifacts" enabled="false" />
@@ -545,7 +528,7 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="0" y="0" width="1440" height="900" extended-state="6" />
+    <frame x="0" y="0" width="1440" height="900" extended-state="0" />
     <editor active="true" />
     <layout>
       <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
@@ -634,39 +617,49 @@
         <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0" />
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/conf/application.conf">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="47" column="24" selection-start="1224" selection-end="1224" vertical-scroll-proportion="0.76516634">
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/app/views/main.scala.html">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="13" column="0" selection-start="425" selection-end="425" vertical-scroll-proportion="0.40041068">
-          <folding />
-        </state>
+        <state line="13" column="0" selection-start="425" selection-end="425" vertical-scroll-proportion="0.40041068" />
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/target/scala-2.9.1/src_managed/main/views/html/total.template.scala">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="30" column="57" selection-start="1098" selection-end="1098" vertical-scroll-proportion="0.33333334">
-          <folding />
-        </state>
+        <state line="30" column="57" selection-start="1098" selection-end="1098" vertical-scroll-proportion="0.33333334" />
       </provider>
     </entry>
     <entry file="jar://$PROJECT_DIR$/../../tools/play-2.0.3/framework/sbt/boot/scala-2.9.1/lib/scala-library.jar!/scala/collection/TraversableOnce.class">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="45" column="6" selection-start="3648" selection-end="3648" vertical-scroll-proportion="0.3511111">
-          <folding />
-        </state>
+        <state line="45" column="6" selection-start="3648" selection-end="3648" vertical-scroll-proportion="0.3511111" />
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/public/stylesheets/main.css">
+    <entry file="file://$PROJECT_DIR$/target/scala-2.9.1/src_managed/main/routes_reverseRouting.scala">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0">
-          <folding />
-        </state>
+        <state line="118" column="4" selection-start="2645" selection-end="2645" vertical-scroll-proportion="0.33193278" />
+      </provider>
+    </entry>
+    <entry file="jar://$PROJECT_DIR$/../../tools/play-2.0.3/framework/sbt/boot/scala-2.9.1/lib/scala-library.jar!/scala/collection/immutable/Stream.class">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="4" column="7" selection-start="502" selection-end="502" vertical-scroll-proportion="0.1330377" />
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/app/views/index.scala.html">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="12" column="25" selection-start="357" selection-end="395" vertical-scroll-proportion="0.24" />
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/conf/routes">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="8" column="72" selection-start="419" selection-end="419" vertical-scroll-proportion="0.0" />
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/target/scala-2.9.1/src_managed/main/views/html/commits.template.scala">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="31" column="56" selection-start="1173" selection-end="1173" vertical-scroll-proportion="0.33333334" />
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/app/views/total.scala.html">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="10" column="20" selection-start="266" selection-end="266" vertical-scroll-proportion="0.2" />
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/project/Build.scala">
@@ -676,68 +669,39 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/target/scala-2.9.1/src_managed/main/routes_reverseRouting.scala">
+    <entry file="file://$PROJECT_DIR$/conf/application.conf">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="118" column="4" selection-start="2645" selection-end="2645" vertical-scroll-proportion="0.33193278">
+        <state line="47" column="24" selection-start="1224" selection-end="1224" vertical-scroll-proportion="0.0">
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="jar://$PROJECT_DIR$/../../tools/play-2.0.3/framework/sbt/boot/scala-2.9.1/lib/scala-library.jar!/scala/collection/immutable/Stream.class">
+    <entry file="file://$PROJECT_DIR$/public/stylesheets/main.css">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="4" column="7" selection-start="502" selection-end="502" vertical-scroll-proportion="0.1330377">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/app/views/index.scala.html">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="12" column="25" selection-start="357" selection-end="395" vertical-scroll-proportion="0.24">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/conf/routes">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="8" column="72" selection-start="419" selection-end="419" vertical-scroll-proportion="0.0">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/app/views/total.scala.html">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="10" column="20" selection-start="266" selection-end="266" vertical-scroll-proportion="0.2">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/app/views/author.scala.html">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="25" column="15" selection-start="82" selection-end="723" vertical-scroll-proportion="-15.625">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/target/scala-2.9.1/src_managed/main/views/html/commits.template.scala">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="31" column="56" selection-start="1173" selection-end="1173" vertical-scroll-proportion="0.33333334">
+        <state line="11" column="0" selection-start="499" selection-end="499" vertical-scroll-proportion="0.0">
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/app/views/commits.scala.html">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="5" column="0" selection-start="154" selection-end="154" vertical-scroll-proportion="-3.125">
+        <state line="15" column="93" selection-start="659" selection-end="659" vertical-scroll-proportion="0.3052917">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/app/views/author.scala.html">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="29" column="38" selection-start="1061" selection-end="1061" vertical-scroll-proportion="-18.125">
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/app/controllers/Application.scala">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="205" column="0" selection-start="6437" selection-end="6437" vertical-scroll-proportion="0.16666667">
+        <state line="164" column="67" selection-start="5146" selection-end="5146" vertical-scroll-proportion="0.43758214">
           <folding>
             <element signature="e#21#42#0" expanded="true" />
-            <element signature="e#646#1071#1" expanded="false" />
           </folding>
         </state>
       </provider>

@@ -5,13 +5,20 @@
 <h1>@authorName</h1>
 <p>@period / @dt</p>
 <table border="1">
-    <thead><th>hash</th><th>+ loc</th><th>!= loc</th>
+    <thead><th>hash</th><th>+ loc</th><th>!= loc</th><th>Files in commit</th>
     </thead>
     @for(c <- commits) {
-    <tr>
-        <td>@c.projectName @c.hash</td>
-        <td>@c.loc.newLoc</td>
-        <td>@c.loc.changedLoc</td>
+    <tr class='@if(c.exclude){exclude}'>
+        <td>@c.projectName, @c.dt, @c.hash</td>
+        <td>@c.loc.newLoc <br/>
+            @if(c.locExclude.newLoc>0){<span class='loc exclude'>@c.locExclude.newLoc</span>}</td>
+        <td>@c.loc.changedLoc <br/>
+            @if(c.locExclude.changedLoc>0){<span class='loc exclude'>@c.locExclude.changedLoc</span>}</td>
+        <td>
+            @for((path,stat) <- c.files) {
+                <span class='commit-file @if(c.exclude||stat.exclude){exclude}'>@path: [@stat.loc.newLoc/@stat.loc.changedLoc] @if(stat.fileCategory.isDefined){(@stat.fileCategory.get)}</span><br/>
+            }
+        </td>
     </tr>
     }
 </table>
