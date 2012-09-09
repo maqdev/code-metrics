@@ -75,7 +75,7 @@ class DatabaseOutputHandler(url: String, driver: String)
       """
         |select author_id, email from author_alias
       """.stripMargin
-    ).apply().map { row =>
+    ).apply().foreach{ row =>
       m += (row[String]("email") -> row[Int]("author_id"))
     }
     m
@@ -87,14 +87,14 @@ class DatabaseOutputHandler(url: String, driver: String)
       return r.get
 
     val authorId = SQL("insert into author(name) values({name})").on("name" -> name).executeInsert().get.toInt
-    SQL("insert into author_alias(author_id, email) values({author_id}, {email})").on("author_id" -> authorId, "email" -> email).executeInsert()
+    SQL("insert into author_alias(author_id, email) values({author_id}, {email})").on("author_id" -> authorId, "email" -> email).execute()
     authorAliasMap += (email->authorId)
     authorId
   }
 
   lazy val fileTypeMap = {
     val m = scala.collection.mutable.Map[String, Int]()
-    SQL("select file_type_id, name from file_type").apply().map {
+    SQL("select file_type_id, name from file_type").apply().foreach {
       row => m += (row[String]("name") -> row[Int]("file_type_id"))
     }
     m
@@ -113,7 +113,7 @@ class DatabaseOutputHandler(url: String, driver: String)
   lazy val metricTypeMap = {
     val m = scala.collection.mutable.Map[String, Int]()
 
-    SQL("select metric_type_id, name from metric_type").apply().map { r =>
+    SQL("select metric_type_id, name from metric_type").apply().foreach { r =>
       m += (r[String]("name") -> r[Int]("metric_type_id"))
     }
     m
@@ -132,15 +132,15 @@ class DatabaseOutputHandler(url: String, driver: String)
   lazy val fileMap = {
     val m = scala.collection.mutable.Map[String, (Int, Option[Int])]()
 
-    SQL("select file_id, file_category_id, path from file where project_id={project_id}").on("project_id" -> currentProjectId).apply().map { r =>
+    SQL("select file_id, file_category_id, path from file where project_id={project_id}").on("project_id" -> currentProjectId).apply().foreach { r =>
       m += (r[String]("path") -> (r[Int]("file_id"), r[Option[Int]]("file_category_id")))
     }
     m
   }
 
-  def fixFileCategory(path: String, r: (Int, Option[Int]), fileCategoryId : Option[Int]){
+  def fixFileCategory(path: String, r: (Int, Option[Int]), fileCategoryId: Option[Int], fileCategoryName: Option[String]){
     if (r._2 != fileCategoryId) {
-      println("Updating category for file: " + path + " to " + fileCategoryId)
+      println("Updating category for file: " + path + " to " + fileCategoryName)
       SQL("update file set file_category_id={file_category_id} where file_id={file_id}").on(
         "file_category_id"->fileCategoryId,
         "file_id"->r._1
@@ -148,10 +148,10 @@ class DatabaseOutputHandler(url: String, driver: String)
     }
   }
 
-  private def getFileId(fileTypeId: Int, fileCategoryId: Option[Int], path: String) : Int = {
+  private def getFileId(fileTypeId: Int, fileCategoryId: Option[Int], fileCategoryName: Option[String], path: String) : Int = {
     val r = fileMap.get(path)
     if (r.isDefined) {
-      fixFileCategory(path, r.get, fileCategoryId)
+      fixFileCategory(path, r.get, fileCategoryId, fileCategoryName)
       return r.get._1
     }
 
@@ -171,10 +171,11 @@ class DatabaseOutputHandler(url: String, driver: String)
   def repositaryUrl(url: String) {
     println("Found repositary: " + url)
 
-    currentProjectId = SQL("select project_id from project where path={path}").on("path" -> url).apply().head[Option[Int]]("project_id")
+    val q = SQL("select project_id from project where path={path}").on("path" -> url).apply()
+    currentProjectId = if (q.isEmpty) None else q.head[Option[Int]]("project_id")
 
     if (currentProjectId.isEmpty) {
-      currentProjectId = Some(SQL("insert into project(name,path) values({name}, {path}").on(
+      currentProjectId = Some(SQL("insert into project(name,path) values({name}, {path})").on(
         "path"->url,
         "name"->url
       ).executeInsert().get.toInt)
@@ -190,9 +191,10 @@ class DatabaseOutputHandler(url: String, driver: String)
 
     val authorId = getAuthorId(c.name, c.email)
 
-    val q = SQL("select commt_id from commt where hash={hash}").on("hash"->c.hash).apply().head[Option[Long]]("commt_id")
+    val q = SQL("select commt_id from commt where hash={hash}").on("hash"->c.hash).apply()
+    val cmt = if (q.isEmpty) None else q.head[Option[Long]]("commt_id")
 
-    if (q.isDefined) {
+    if (cmt.isDefined) {
       println("Commit already processed")
       return false
     }
@@ -217,17 +219,17 @@ class DatabaseOutputHandler(url: String, driver: String)
     println("Updating db for: " + metrics.fileName)
     val fileTypeId = getFileTypeId(metrics.language)
 
-    val fileCategoryId : Option[Int] =
+    val (fileCategoryId : Option[Int], fileCategoryName: Option[String]) =
       if (metrics.category.isDefined) {
         val fcid = getFileCategoryId(metrics.category.get)
         if (fcid.isEmpty)
           println("Category " + metrics.category.get + " is not found in database, leaving it empty")
-        fcid
+        (fcid, metrics.category)
       }
     else
-      None
+      (None, None)
 
-    val fileId = getFileId(fileTypeId, fileCategoryId, metrics.fileName)
+    val fileId = getFileId(fileTypeId, fileCategoryId, fileCategoryName, metrics.fileName)
     for ((key, value) <- metrics.metrics) {
       val metricTypeId = getMetricTypeId(key.toString)
 
@@ -268,7 +270,7 @@ class DatabaseOutputHandler(url: String, driver: String)
       """.stripMargin
     ).on(
       "project_id"->currentProjectId.get
-    ).apply().map{ r =>
+    ).apply().foreach { r =>
       val fileCategoryId = r[Int]("file_category_id")
       val name = r[String]("name")
       val regex = r[String]("regex")
@@ -291,7 +293,7 @@ class DatabaseOutputHandler(url: String, driver: String)
       val ft = ftl.getFileType(key)
       if (ft.category.isDefined) {
         val fileCategoryId = getFileCategoryId(ft.category.get)
-        fixFileCategory(key, value, fileCategoryId)
+        fixFileCategory(key, value, fileCategoryId, ft.category)
       }
     }
   }
