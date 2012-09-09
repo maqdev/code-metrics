@@ -54,7 +54,7 @@ import org.scalaquery.ql.TypeMapper._
 import org.scalaquery.ql.extended.H2Driver.Implicit._
 import org.scalaquery.ql.extended.{ExtendedTable => Table}
 
-class DatabaseOutputHandler(url: String, driver: String)
+class DatabaseOutputHandler(url: String, driver: String, force: Boolean)
   extends Closeable with OutputHandler {
 
   implicit val connection = {
@@ -66,7 +66,6 @@ class DatabaseOutputHandler(url: String, driver: String)
     connection.close()
   }
 
-  var progress = -1
   var currentProjectId : Option[Int] = None
   lazy val authorAliasMap = {
     val m = scala.collection.mutable.Map[String, Int]()
@@ -194,11 +193,21 @@ class DatabaseOutputHandler(url: String, driver: String)
     val q = SQL("select commt_id from commt where hash={hash}").on("hash"->c.hash).apply()
     val cmt = if (q.isEmpty) None else q.head[Option[Long]]("commt_id")
 
-    if (cmt.isDefined) {
+    if (cmt.isDefined && !force) {
       println("Commit already processed")
       return false
     }
     else {
+
+      if (cmt.isDefined) {
+        // remove existing metrics
+        println("Removing existing metrics for commit " + c.hash + " #" + cmt.get + "...")
+        SQL("delete from metric where commt_id={commt_id}").on("commt_id"->cmt.get).execute
+
+        println("Removing commit " + c.hash + " #" + cmt.get + "...")
+        SQL("delete from commt where commt_id={commt_id}").on("commt_id"->cmt.get).execute
+      }
+
       currentCommitId = SQL("insert into commt(author_id, hash, project_id, commt_type, dt) values ({author_id}, {hash}, {project_id}, {commt_type}, {dt})").on(
         "author_id"->authorId,
         "hash"->c.hash,
@@ -248,11 +257,8 @@ class DatabaseOutputHandler(url: String, driver: String)
   }
 
   def setProgress(current: Int, maximum: Int) {
-    val percent = (current * 100) / maximum
-    if (percent != progress) {
-      println("Completed " + percent + "%")
-    }
-    progress = percent
+    val percent = (current * 100.0) / maximum
+    println("Completed " + ("%.2ff" format percent) + "%")
   }
 
   private var fileCategoryMap = scala.collection.mutable.Map[String, Int]()

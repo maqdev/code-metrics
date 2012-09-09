@@ -250,7 +250,7 @@ create table commt
 create unique index ix_commt_hash on commt(hash);
 
 grant select,insert,update,delete on commt to codemetrics_admin;
-grant select,insert,update on commt to codemetrics;
+grant select,insert,update,delete on commt to codemetrics;
 grant select on commt to codemetrics_web;
 
 create sequence commt_id_seq;

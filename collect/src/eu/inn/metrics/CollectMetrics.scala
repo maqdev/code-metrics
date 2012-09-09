@@ -45,6 +45,10 @@ object CollectMetrics {
             (v: String, c: CollectMetricsConfig) => c.copy(onlyInit = v.toBoolean)
           } ,
 
+          opt("f", "force", "force overwrite existing commit metrics") {
+            (v: String, c: CollectMetricsConfig) => c.copy(force = v.toBoolean)
+          } ,
+
           opt("d", "diffwrapper-cmd", "diffwrapper path") {
             (v: String, c: CollectMetricsConfig) => c.copy(diffwrapperCmd = v)
           } ,
@@ -84,7 +88,7 @@ object CollectMetrics {
               if (v.length != 2) {
                 throw new RuntimeException("db parameter is incorrect")
               }
-              new DatabaseOutputHandler(v(0), v(1))
+              new DatabaseOutputHandler(v(0), v(1), config.force)
             }
 
             val r = new ProcessRepositary(config, o)
