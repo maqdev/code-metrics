@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="norma_jar">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../norma/out/artifacts/norma_jar/norma_jar.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

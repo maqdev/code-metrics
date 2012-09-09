@@ -33,9 +33,12 @@ package eu.inn.metrics.output
 
 import eu.inn.metrics._
 import eu.inn.metrics.shell.GitVersion
-import java.sql.Timestamp
+import java.sql.{DriverManager, Timestamp}
 import util.matching.Regex
 import eu.inn.metrics.diff.DiffHandlerType
+
+import norma._
+import java.io.Closeable
 
 // Import the session management, including the implicit threadLocalSession
 import org.scalaquery.session._
@@ -52,42 +55,47 @@ import org.scalaquery.ql.extended.H2Driver.Implicit._
 import org.scalaquery.ql.extended.{ExtendedTable => Table}
 
 class DatabaseOutputHandler(url: String, driver: String)
-  extends eu.inn.metrics.database.DAL(url, driver) with OutputHandler {
+  extends Closeable with OutputHandler {
+
+  implicit val connection = {
+    val cls = Class.forName(driver)
+    DriverManager.getConnection(url)
+  }
+
+  def close() {
+    connection.close()
+  }
 
   var progress = -1
   var currentProjectId : Option[Int] = None
   lazy val authorAliasMap = {
     val m = scala.collection.mutable.Map[String, Int]()
-    db withSession { implicit session : Session =>
-      val q = for {aa <- AuthorAlias} yield aa.*
-      q.foreach {
-        case (authorId, email) => m += (email -> authorId)
-      }
+
+    SQL(
+      """
+        |select author_id, email from author_alias
+      """.stripMargin
+    ).apply().map { row =>
+      m += (row[String]("email") -> row[Int]("author_id"))
     }
     m
   }
+
   private def getAuthorId(name: String, email: String) : Int = {
     val r = authorAliasMap.get(email)
     if (r.isDefined)
       return r.get
 
-    db withSession { implicit session : Session =>
-      val ins = (Author.name).insert(name)
-      val authorId = lastSequenceId
-
-      val insaa = (AuthorAlias.authorId ~ AuthorAlias.email).insert(authorId, email)
-      authorAliasMap += (email -> authorId)
-      return authorId
-    }
+    val authorId = SQL("insert into author(name) values({name})").on("name" -> name).executeInsert().get.toInt
+    SQL("insert into author_alias(author_id, email) values({author_id}, {email})").on("author_id" -> authorId, "email" -> email).executeInsert()
+    authorAliasMap += (email->authorId)
+    authorId
   }
 
   lazy val fileTypeMap = {
     val m = scala.collection.mutable.Map[String, Int]()
-    db withSession { implicit session : Session =>
-      val q = for {ft <- FileType} yield ft.*
-      q.foreach {
-        case (fileTypeId, name) => m += (name -> fileTypeId)
-      }
+    SQL("select file_type_id, name from file_type").apply().map {
+      row => m += (row[String]("name") -> row[Int]("file_type_id"))
     }
     m
   }
@@ -97,86 +105,79 @@ class DatabaseOutputHandler(url: String, driver: String)
     if (r.isDefined)
       return r.get
 
-    db withSession { implicit session : Session =>
-      val ins = (FileType.name).insert(fileTypeName)
-      val id = lastSequenceId
-      fileTypeMap += (fileTypeName -> id)
-      return id
-    }
+    val id = SQL("insert into file_type(name) values({name})").on("name" -> fileTypeName).executeInsert().get.toInt
+    fileTypeMap += (fileTypeName -> id)
+    return id
   }
 
   lazy val metricTypeMap = {
     val m = scala.collection.mutable.Map[String, Int]()
-    db withSession { implicit session : Session =>
-      val q = for {ft <- MetricType} yield ft.*
-      q.foreach {
-        case (metricTypeId, name) => m += (name -> metricTypeId)
-      }
+
+    SQL("select metric_type_id, name from metric_type").apply().map { r =>
+      m += (r[String]("name") -> r[Int]("metric_type_id"))
     }
     m
   }
+
   private def getMetricTypeId(metricTypeName: String) : Int = {
     val r = metricTypeMap.get(metricTypeName)
     if (r.isDefined)
       return r.get
 
-    db withSession { implicit session : Session =>
-      val ins = (MetricType.name).insert(metricTypeName)
-      val id = lastSequenceId
-      metricTypeMap += (metricTypeName -> id)
-      return id
-    }
+    val id = SQL("insert into metric_type(name) values({name}").on("name"->metricTypeName).executeInsert().get.toInt
+    metricTypeMap += (metricTypeName -> id)
+    return id
   }
 
   lazy val fileMap = {
     val m = scala.collection.mutable.Map[String, (Int, Option[Int])]()
-    db withSession { implicit session : Session =>
-      val q = for {ft <- File if ft.projectId === currentProjectId} yield ft.path ~ ft.fileId ~ ft.fileCategoryId
-      q.foreach {
-        case (path, fileId, fileCategoryId) => m += (path -> (fileId, fileCategoryId))
-      }
+
+    SQL("select file_id, file_category_id, path from file where project_id={project_id}").on("project_id" -> currentProjectId).apply().map { r =>
+      m += (r[String]("path") -> (r[Int]("file_id"), r[Option[Int]]("file_category_id")))
     }
     m
   }
 
-  def fixFileCategory(implicit session: Session, path: String, r: (Int, Option[Int]), fileCategoryId : Option[Int]){
+  def fixFileCategory(path: String, r: (Int, Option[Int]), fileCategoryId : Option[Int]){
     if (r._2 != fileCategoryId) {
       println("Updating category for file: " + path + " to " + fileCategoryId)
-      val upd = File.where(_.fileId === r._1.bind).map(_.fileCategoryId).update(fileCategoryId)
+      SQL("update file set file_category_id={file_category_id} where file_id={file_id}").on(
+        "file_category_id"->fileCategoryId,
+        "file_id"->r._1
+      ).executeUpdate()
     }
   }
 
   private def getFileId(fileTypeId: Int, fileCategoryId: Option[Int], path: String) : Int = {
     val r = fileMap.get(path)
-
-    db withSession { implicit session : Session =>
-      if (r.isDefined) {
-        fixFileCategory(session, path, r.get, fileCategoryId)
-        return r.get._1
-      }
-
-      val ins = (File.projectId ~ File.fileTypeId ~ File.fileCategoryId ~ File.path).insert(
-        currentProjectId.get, fileTypeId, fileCategoryId, path
-      )
-      val id = lastSequenceId
-      fileMap += (path -> (id, fileCategoryId))
-      return id
+    if (r.isDefined) {
+      fixFileCategory(path, r.get, fileCategoryId)
+      return r.get._1
     }
+
+    val id = SQL("insert into file(project_id, file_type_id, file_category_id, path) values({project_id},{file_type_id},{file_category_id},{path})").on(
+      "project_id" -> currentProjectId.get,
+      "file_type_id" -> fileTypeId,
+      "file_category_id" -> fileCategoryId,
+      "path" -> path
+    ).executeInsert().get.toInt
+
+    fileMap += (path -> (id, fileCategoryId))
+    return id
   }
 
-  def lastSequenceId(implicit session : Session) = Query(SimpleFunction.nullary[Int]("LASTVAL")).first()
+  //def lastSequenceId = SQL("select LASTVAL as lv").apply().head[Long]("lv")
 
   def repositaryUrl(url: String) {
     println("Found repositary: " + url)
 
-    db withSession { implicit session : Session =>
-      val qproj = for {p <- Project if p.path === url.bind} yield p.projectId
-      currentProjectId = qproj.firstOption()
+    currentProjectId = SQL("select project_id from project where path={path}").on("path" -> url).apply().head[Option[Int]]("project_id")
 
-      if (currentProjectId.isEmpty) {
-        val ins = (Project.name ~ Project.path).insert(url, url)
-        currentProjectId = Some(lastSequenceId)
-      }
+    if (currentProjectId.isEmpty) {
+      currentProjectId = Some(SQL("insert into project(name,path) values({name}, {path}").on(
+        "path"->url,
+        "name"->url
+      ).executeInsert().get.toInt)
 
       println("id of project is: " + currentProjectId.get)
     }
@@ -189,20 +190,21 @@ class DatabaseOutputHandler(url: String, driver: String)
 
     val authorId = getAuthorId(c.name, c.email)
 
-    db withSession { implicit session : Session =>
-      val q = for { cm <- Commit if cm.hash === c.hash.bind } yield cm.commitId
+    val q = SQL("select commt_id from commt where hash={hash}").on("hash"->c.hash).apply().head[Option[Long]]("commt_id")
 
-      if (q.firstOption().isDefined) {
-        println("Commit already processed")
-        return false
-      }
-      else {
-        val ins = (Commit.authorId ~ Commit.hash ~ Commit.projectId ~ Commit.commitType ~ Commit.dt).insert(
-          authorId, c.hash, currentProjectId.get, c.commitType.id, new Timestamp(c.dt.getMillis())
-        )
-        currentCommitId = Some(lastSequenceId)
-        return true
-      }
+    if (q.isDefined) {
+      println("Commit already processed")
+      return false
+    }
+    else {
+      currentCommitId = SQL("insert into commt(author_id, hash, project_id, commt_type, dt) values ({author_id}, {hash}, {project_id}, {commt_type}, {dt})").on(
+        "author_id"->authorId,
+        "hash"->c.hash,
+        "project_id"->currentProjectId.get,
+        "commt_type"->c.commitType.id,
+        "dt"->new Timestamp(c.dt.getMillis())
+      ).executeInsert()
+      return true
     }
   }
 
@@ -229,11 +231,12 @@ class DatabaseOutputHandler(url: String, driver: String)
     for ((key, value) <- metrics.metrics) {
       val metricTypeId = getMetricTypeId(key.toString)
 
-      db withSession { implicit session : Session =>
-        val ins = (Metric.commitId ~ Metric.fileId ~ Metric.metricTypeId ~ Metric.value).insert(
-          currentCommitId.get, fileId, metricTypeId, value
-        )
-      }
+      SQL("insert into metric(commt_id, file_id, metric_type_id, value) values({commt_id}, {file_id}, {metric_type_id}, {value})").on(
+        "commt_id"->currentCommitId.get,
+        "file_id"->fileId,
+        "metric_type_id"->metricTypeId,
+        "value"->value
+      ).execute()
     }
     println()
   }
@@ -254,33 +257,41 @@ class DatabaseOutputHandler(url: String, driver: String)
   def getFileCategoryId(name: String) = fileCategoryMap.get(name)
 
   def fetchTypeList(ftl: FileTypeList) {
-    db withSession { implicit session : Session =>
 
-      val q = for {
-        Join (fc, ft) <- FileCategory leftJoin FileType on (_.fileTypeId === _.fileTypeId)
-        _ <- Query orderBy fc.priority
-        if (fc.projectId === currentProjectId.bind) || (fc.projectId.isNull)
-      } yield fc.fileCategoryId ~ fc.name ~ fc.regex ~ fc.diffHandler ~ ft.name ~ fc.priority
+    SQL(
+      """
+        |select fc.file_category_id, fc.name, fc.regex, fc.diff_handler, ft.name ft_name, fc.priority
+        |from file_category fc
+        |left join file_type ft on (fc.file_type_id = ft.file_type_id)
+        |where coalesce(fc.project_id, {project_id}) = {project_id}
+        |order by fc.priority
+      """.stripMargin
+    ).on(
+      "project_id"->currentProjectId.get
+    ).apply().map{ r =>
+      val fileCategoryId = r[Int]("file_category_id")
+      val name = r[String]("name")
+      val regex = r[String]("regex")
+      val diffHandler = r[Option[String]]("diff_handler")
+      val fileTypeName = r[Option[String]]("ft_name")
+      val priority = r[Int]("priority")
 
-      q.foreach {
-        case(fileCategoryId,name,regex,diffHandler,fileTypeName,priority)=>
-          ftl.append(FileCategoryRegex(name, new Regex(regex), priority,
-            diffHandler match {
-              case Some(x) => Some(DiffHandlerType.withName(x))
-              case None => None
-            },
-            if (fileTypeName.isEmpty) None else Some(fileTypeName)) //how is this will be handled
-          )
-          fileCategoryMap += (name -> fileCategoryId)
-      }
+      ftl.append(FileCategoryRegex(name, new Regex(regex), priority,
+        diffHandler match {
+          case Some(x) => Some(DiffHandlerType.withName(x))
+          case None => None
+        },
+        fileTypeName //how is this will be handled
+      ))
+      fileCategoryMap += (name -> fileCategoryId)
+    }
 
-      println("Updating categories for the files...")
-      for ((key,value) <- fileMap) {
-        val ft = ftl.getFileType(key)
-        if (ft.category.isDefined) {
-          val fileCategoryId = getFileCategoryId(ft.category.get)
-          fixFileCategory(session, key, value, fileCategoryId)
-        }
+    println("Updating categories for the files...")
+    for ((key,value) <- fileMap) {
+      val ft = ftl.getFileType(key)
+      if (ft.category.isDefined) {
+        val fileCategoryId = getFileCategoryId(ft.category.get)
+        fixFileCategory(key, value, fileCategoryId)
       }
     }
   }

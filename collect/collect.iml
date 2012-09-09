@@ -25,6 +25,7 @@
     <orderEntry type="library" name="postgresql:postgresql:9.1-901.jdbc4" level="project" />
     <orderEntry type="library" name="org.scalaquery:scalaquery_2.9.1:0.10.0-M1" level="project" />
     <orderEntry type="module" module-name="dal" />
+    <orderEntry type="library" name="norma_jar" level="project" />
   </component>
 </module>
 
