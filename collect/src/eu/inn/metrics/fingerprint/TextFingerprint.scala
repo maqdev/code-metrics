@@ -29,10 +29,8 @@
  *  Magomed Abdurakhmanov (maga@inn.eu)
  */
 
-package eu.inn.metrics.shell
 
-import scala.Predef.String
-import scala.Seq
-import eu.inn.metrics.diff.DiffHandlerType
+package eu.inn.metrics.fingerprint
 
-case class ClocFileType(language: String, extensions: Seq[String], diffHandlerType: DiffHandlerType.Value)
+case class FingerprintPart(pos: Int, cgramPos: Int, cgramValue: Long, lineCount: Int)
+case class TextFingerprint(nonWhitespaceMd5: Seq[Byte], fingerprint: Seq[FingerprintPart])
