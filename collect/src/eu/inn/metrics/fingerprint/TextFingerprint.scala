@@ -32,5 +32,5 @@
 
 package eu.inn.metrics.fingerprint
 
-case class FingerprintPart(pos: Int, cgramPos: Int, cgramValue: Long, lineCount: Int)
-case class TextFingerprint(nonWhitespaceMd5: Seq[Byte], fingerprint: Seq[FingerprintPart])
+case class FingerprintPart(key: Int, value: Int, lineCount: Int)
+case class TextFingerprint(nonWhitespaceMd5: Seq[Byte], fingerprintA: Seq[FingerprintPart], fingerprintB: Seq[FingerprintPart])

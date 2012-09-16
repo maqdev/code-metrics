@@ -34,10 +34,11 @@
  *  Algorithm:
  *
  *  1. calculate crc for each line of text (empty lines are ignored, crc is calculated on non-whitespace characters)
- *  2. group crc's of each line are grouped into c-grams using division remainder of crc
+ *  2. A. group lines into the fingerprints A using position of line, total group count = precision.
+ *  3. A. for each group A calculate crc of line crc's
+ *  4. B. group crc's of each line into the fingerprints B using division remainder of crc
+ *  5. B. for each group B calculate crc of line crc's
  *
- *  On output we have list of
- *    (c-gram value, n-gram position, line-count)
  */
 
 package eu.inn.metrics.fingerprint
@@ -48,7 +49,7 @@ import collection.mutable
 import java.util.zip.CRC32
 import scala.util.control.Breaks._
 
-class TextFingerprintCalculator(ngramCount: Int, cgramCount: Int) {
+class TextFingerprintCalculator(precision: Int) {
 
   def getFingerprint(textReader: BufferedReader) = {
 
@@ -73,91 +74,99 @@ class TextFingerprintCalculator(ngramCount: Int, cgramCount: Int) {
         break
     }}
 
-    val linesPerNgram = math.max(lines.size/ngramCount,1)
-    val cgrams = new Array[CRC32](cgramCount)
-    val cgramLineCount = new Array[Int](cgramCount)
+    // to calculate position ignored fingerprint
+    val crcA = new Array[CRC32](precision)
+    val linecountA = new Array[Int](precision)
+    val linesPerA = math.max(lines.size / precision, 1)
 
-    for (i <- 0 until cgramCount) {
-      cgrams(i) = new CRC32()
+    // to calculate position ignored fingerprint
+    val crcB = new Array[CRC32](precision)
+    val linecountB = new Array[Int](precision)
+
+    for (i <- 0 until precision) {
+      crcA(i) = new CRC32()
+      linecountA(i) = 0
+      crcB(i) = new CRC32()
+      linecountB(i) = 0
     }
 
-    val parts = new mutable.MutableList[FingerprintPart]()
-    var line = 0
-    for (ngram <- 0 until ngramCount) {
-      for (i <- 0 until cgramCount) {
-        cgrams(i).reset()
-        cgramLineCount(i) = 0
-      }
+    for (line <- 0 until lines.size) {
+      val lineCrc = lines(line)
 
-      var count = math.min(linesPerNgram, lines.size - line)
-      while (count > 0) {
-        val crc = lines(line)
-        val cgramPos = (crc % cgramCount).toInt
-        cgrams(cgramPos).update(crc.toByte)
-        cgrams(cgramPos).update((crc >>> 8).toByte)
-        cgrams(cgramPos).update((crc >>> 16).toByte)
-        cgrams(cgramPos).update((crc >>> 24).toByte)
-        cgramLineCount(cgramPos) += 1
-        line += 1
-        count -= 1
-      }
+      val apos = line / linesPerA
+      crcA(apos).update(lineCrc.toByte)
+      crcA(apos).update((lineCrc >>> 8).toByte)
+      crcA(apos).update((lineCrc >>> 16).toByte)
+      crcA(apos).update((lineCrc >>> 24).toByte)
+      linecountA(apos) += 1
 
-      for (i <- 0 until cgramCount) {
-        if (cgramLineCount(i)>0) {
-          parts += new FingerprintPart(ngram, i, cgrams(i).getValue(), cgramLineCount(i))
-        }
+      val bpos = (lineCrc % precision).toInt
+      crcB(bpos).update(lineCrc.toByte)
+      crcB(bpos).update((lineCrc >>> 8).toByte)
+      crcB(bpos).update((lineCrc >>> 16).toByte)
+      crcB(bpos).update((lineCrc >>> 24).toByte)
+      linecountB(bpos) += 1
+    }
+
+    val partsA = new mutable.MutableList[FingerprintPart]()
+    val partsB = new mutable.MutableList[FingerprintPart]()
+    for (i <- 0 until precision) {
+      if (linecountA(i)>0) {
+        partsA += new FingerprintPart(i, crcA(i).getValue().toInt, linecountA(i))
+      }
+      if (linecountB(i)>0) {
+        partsB += new FingerprintPart(i, crcB(i).getValue().toInt, linecountB(i))
       }
     }
 
-    TextFingerprint(if (lines.isEmpty) Seq[Byte]() else md5.digest().toSeq, parts.toSeq)
+    TextFingerprint(if (lines.isEmpty) Seq[Byte]() else md5.digest().toSeq, partsA.toSeq, partsB.toSeq)
   }
 
-  def getSimilarity(a: TextFingerprint, b: TextFingerprint) : Double = {
-    if (a.nonWhitespaceMd5 == b.nonWhitespaceMd5) return 1.0
+  def getSimilarity(x: TextFingerprint, y: TextFingerprint) : Double = {
+    if (x.nonWhitespaceMd5 == y.nonWhitespaceMd5) return 1.0
 
-    val (aa, aLineCount) = getFingerprintAsArrays(a.fingerprint)
-    val (ba, bLineCount) = getFingerprintAsArrays(b.fingerprint)
+    val similarityA = getSimilarityForParts(x.fingerprintA, y.fingerprintA)
+    val similarityB = getSimilarityForParts(x.fingerprintB, y.fingerprintB)
 
-    val lineWeight = 1.0/(aLineCount+bLineCount)
+    math.max(math.max(similarityA, similarityB), 0)
+  }
+
+  private def getSimilarityForParts(x: Seq[FingerprintPart], y: Seq[FingerprintPart]) = {
+    val (xa, xLineCount) = getFingerprintAsArrays(x)
+    val (ya, yLineCount) = getFingerprintAsArrays(y)
+
+    val lineWeight = 1.0/(xLineCount+yLineCount)
     var similarity = 1.0
-    for (i <- 0 until ngramCount) {
-      for (j <- 0 until cgramCount) {
 
-        val ap = aa(i)(j)
-        val bp = ba(i)(j)
+    for (i <- 0 until precision) {
+      val xp = xa(i)
+      val yp = ya(i)
 
-        if (ap != null && bp != null) {
-          if (ap.cgramValue == bp.cgramValue)
-            similarity -= math.abs(ap.lineCount - bp.lineCount) * lineWeight
-          else
-            similarity -= lineWeight * (ap.lineCount + bp.lineCount)
-        }
-        else {
-          if (ap != null || bp != null) {
-            val lc = if (ap != null) ap.lineCount else bp.lineCount
-            similarity -= lc * lineWeight
-          }
+      if (xp != null && yp != null) {
+        if (xp.value == yp.value)
+          similarity -= math.abs(xp.lineCount - yp.lineCount) * lineWeight
+        else
+          similarity -= lineWeight * (xp.lineCount + yp.lineCount)
+      }
+      else {
+        if (xp != null || yp != null) {
+          val lc = if (xp != null) xp.lineCount else yp.lineCount
+          similarity -= lc * lineWeight
         }
       }
     }
-
-    math.max(similarity, 0)
+    similarity
   }
 
   private def getFingerprintAsArrays(parts: Seq[FingerprintPart]) = {
-    val a = new Array[Array[FingerprintPart]](ngramCount)
-    for (i <- 0 until ngramCount) {
-      a(i) = new Array[FingerprintPart](cgramCount)
-    }
+    val a = new Array[FingerprintPart](precision)
 
     var lineCount = 0
     for (p<-parts) {
-      if (p.pos >= ngramCount)
-        throw new RuntimeException("Position of n-gram is more than requested")
-      if (p.cgramPos >= cgramCount)
-        throw new RuntimeException("Position of c-gram is more than requested")
+      if (p.key >= precision)
+        throw new RuntimeException("Position of key is more than requested")
 
-      a(p.pos)(p.cgramPos) = p
+      a(p.key) = p
       lineCount += p.lineCount
     }
 
