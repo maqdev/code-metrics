@@ -29,6 +29,8 @@
  *  Magomed Abdurakhmanov (maga@inn.eu)
  */
 
+test
+
 package eu.inn.metrics
 
 case class RepositaryCommit(hash: String, name: String, email: String, commitType: RepositaryCommitType.Value, dt: org.joda.time.DateTime)
