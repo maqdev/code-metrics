@@ -4,5 +4,7 @@ project/project/
 project/target/
 .idea/workspace.xml
 .idea/tasks.xml
+reports/.idea/workspace.xml
+reports/.idea/tasks.xml
 lib/
 out/

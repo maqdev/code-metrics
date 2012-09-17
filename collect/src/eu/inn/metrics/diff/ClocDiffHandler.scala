@@ -33,7 +33,7 @@ package eu.inn.metrics.diff
 
 import eu.inn.metrics._
 import eu.inn.metrics.FileMetrics
-import fingerprint.{TextFingerprintCalculator, TextFingerprint}
+import fingerprint.{FingerprintPart, TextFingerprintCalculator, TextFingerprint}
 import shell.{ClocFileWasIgnoredException, ProcessCommandException, ClocCommand}
 import java.io.{BufferedReader, FileReader, File}
 
@@ -43,7 +43,7 @@ class ClocDiffHandler(clocPath: String, fileName: String, oldFilePath: String, n
   override def run(): FileMetrics = {
 
     val binaryResult = super.run()
-    val result = if (newFilePath.isEmpty) binaryResult else binaryResult.copy(fingerprint = Some(getFingerprints(newFilePath)))
+    val result = if (newFilePath.isEmpty) binaryResult else binaryResult.copy(fingerprint = getFingerprints(newFilePath))
 
     val sizeOld = if (oldFilePath.isEmpty) 0 else (new File(oldFilePath)).length;
     val sizeNew = if (newFilePath.isEmpty) 0 else (new File(newFilePath)).length;
@@ -89,20 +89,34 @@ class ClocDiffHandler(clocPath: String, fileName: String, oldFilePath: String, n
     result
   }
 
-  private def getFingerprints(fileName: String): TextFingerprint = {
+  private def getFingerprints(fileName: String): Option[TextFingerprint] = {
 
-    val file = new FileReader(fileName)
+    val file = new File(fileName)
+    if (!file.exists() || !file.canRead()) {
+      return None
+    }
+
     try {
-      val buf = new BufferedReader(file)
+      val fileReader = new FileReader(file)
       try {
-        TextFingerprintCalculator.getFingerprint(buf)
+        val buf = new BufferedReader(fileReader)
+        try {
+          Some(TextFingerprintCalculator.getFingerprint(buf))
+        }
+        finally {
+          buf.close()
+        }
       }
       finally {
-        buf.close()
+        fileReader.close()
       }
     }
-    finally {
-      file.close()
+    catch {
+      case e : Throwable =>
+        println("Couldn't get fingertips. ")
+        e.printStackTrace()
+
+        None
     }
   }
 }
