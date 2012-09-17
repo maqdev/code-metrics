@@ -32,5 +32,7 @@
 package eu.inn.metrics
 
 import collection.mutable
+import fingerprint.TextFingerprint
 
-case class FileMetrics(fileName: String, category: Option[String], language: String, metrics: mutable.Map[MetricType.Value, Int])
+case class FileMetrics(fileName: String, category: Option[String], language: String, metrics: mutable.Map[MetricType.Value, Int],
+                        isNewFile: Boolean, fingerprint: Option[TextFingerprint])

@@ -33,15 +33,17 @@ package eu.inn.metrics.diff
 
 import eu.inn.metrics._
 import eu.inn.metrics.FileMetrics
+import fingerprint.{TextFingerprintCalculator, TextFingerprint}
 import shell.{ClocFileWasIgnoredException, ProcessCommandException, ClocCommand}
-import java.io.File
+import java.io.{BufferedReader, FileReader, File}
 
 class ClocDiffHandler(clocPath: String, fileName: String, oldFilePath: String, newFilePath: String, category: Option[String], language: String, extension: String, clocFileSizeLimit: Option[Int])
   extends BinaryDiffHandler(fileName, oldFilePath, newFilePath, category, language) {
 
   override def run(): FileMetrics = {
 
-    val result = super.run()
+    val binaryResult = super.run()
+    val result = if (newFilePath.isEmpty) binaryResult else binaryResult.copy(fingerprint = Some(getFingerprints(newFilePath)))
 
     val sizeOld = if (oldFilePath.isEmpty) 0 else (new File(oldFilePath)).length;
     val sizeNew = if (newFilePath.isEmpty) 0 else (new File(newFilePath)).length;
@@ -85,5 +87,22 @@ class ClocDiffHandler(clocPath: String, fileName: String, oldFilePath: String, n
     }
 
     result
+  }
+
+  private def getFingerprints(fileName: String): TextFingerprint = {
+
+    val file = new FileReader(fileName)
+    try {
+      val buf = new BufferedReader(file)
+      try {
+        TextFingerprintCalculator.getFingerprint(buf)
+      }
+      finally {
+        buf.close()
+      }
+    }
+    finally {
+      file.close()
+    }
   }
 }

@@ -49,6 +49,14 @@ import collection.mutable
 import java.util.zip.CRC32
 import scala.util.control.Breaks._
 
+object TextFingerprintCalculator {
+  private final val precision = 20 // changing precision will invalidate all existing fingerprints
+  private final val calc = new TextFingerprintCalculator(precision)
+
+  def getFingerprint(textReader: BufferedReader) = calc.getFingerprint(textReader)
+  def getSimilarity(x: TextFingerprint, y: TextFingerprint) = calc.getSimilarity(x, y)
+}
+
 class TextFingerprintCalculator(precision: Int) {
 
   def getFingerprint(textReader: BufferedReader) = {
@@ -93,7 +101,7 @@ class TextFingerprintCalculator(precision: Int) {
     for (line <- 0 until lines.size) {
       val lineCrc = lines(line)
 
-      val apos = line / linesPerA
+      val apos = math.min(line / linesPerA, precision-1)
       crcA(apos).update(lineCrc.toByte)
       crcA(apos).update((lineCrc >>> 8).toByte)
       crcA(apos).update((lineCrc >>> 16).toByte)
@@ -123,7 +131,7 @@ class TextFingerprintCalculator(precision: Int) {
   }
 
   def getSimilarity(x: TextFingerprint, y: TextFingerprint) : Double = {
-    if (x.nonWhitespaceMd5 == y.nonWhitespaceMd5) return 1.0
+    if (!x.nonWhitespaceMd5.isEmpty && x.nonWhitespaceMd5 == y.nonWhitespaceMd5) return 1.0
 
     val similarityA = getSimilarityForParts(x.fingerprintA, y.fingerprintA)
     val similarityB = getSimilarityForParts(x.fingerprintB, y.fingerprintB)

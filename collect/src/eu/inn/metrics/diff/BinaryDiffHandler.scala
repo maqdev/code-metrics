@@ -63,6 +63,6 @@ class BinaryDiffHandler(fileName: String, oldFilePath: String, newFilePath: Stri
       metrics += (MetricType.BYTES_DELTA -> (fnew.length - fold.length).toInt)
     }
 
-    FileMetrics(fileName, category, language, metrics)
+    FileMetrics(fileName, category, language, metrics, oldFilePath.isEmpty && !newFilePath.isEmpty, None)
   }
 }

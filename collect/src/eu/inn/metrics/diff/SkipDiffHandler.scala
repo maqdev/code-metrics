@@ -40,6 +40,6 @@ class SkipDiffHandler(fileName: String, oldFilePath: String, newFilePath: String
 
   def run(): FileMetrics = {
     val metrics = scala.collection.mutable.Map[MetricType.Value, Int]()
-    FileMetrics(fileName, category, language, metrics)
+    FileMetrics(fileName, category, language, metrics, oldFilePath.isEmpty && !newFilePath.isEmpty, None)
   }
 }

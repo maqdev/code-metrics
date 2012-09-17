@@ -298,3 +298,55 @@ create table metric
 grant select,insert,update,delete on metric to codemetrics_admin;
 grant select,insert,update,delete on metric to codemetrics;
 grant select on metric to codemetrics_web;
+
+----------------------------------------------------------------------------------------
+-- file_version
+----------------------------------------------------------------------------------------
+
+create table file_version
+(
+    file_version_id bigint not null,
+    commt_id bigint not null,
+    file_id int not null,
+    similar_file_version_id bigint null,
+    similarity float4 not null,
+    nonws_md5 bytea not null,
+    constraint pk_file_version primary key (file_version_id),
+    constraint fk_file_version__commt foreign key (commt_id) references commt(commt_id),
+    constraint fk_file_version__file foreign key (file_id) references file(file_id),
+    constraint fk_file_version__similar foreign key (similar_file_version_id) references file_version(file_version_id)
+);
+
+create sequence file_version_id_seq;
+alter table file_version alter column file_version_id set default nextval('file_version_id_seq');
+alter sequence file_version_id_seq owned by file_version.file_version_id;
+grant select, usage on file_version_id_seq to codemetrics;
+
+grant select,insert,update,delete on file_version to codemetrics_admin;
+grant select,insert,update,delete on file_version to codemetrics;
+grant select on file_version to codemetrics_web;
+
+create index ix_file_version__nonws_md5 on file_version(nonws_md5);
+
+----------------------------------------------------------------------------------------
+-- fingerprint
+----------------------------------------------------------------------------------------
+
+create table fingerprint
+(
+    file_version_id bigint not null,
+    type char not null,
+    key smallint not null,
+    value int not null,
+    line_count int not null,
+    constraint fk_fingerprint__file_version foreign key (file_version_id) references file_version(file_version_id)
+);
+
+grant select,insert,update,delete on fingerprint to codemetrics_admin;
+grant select,insert,update,delete on fingerprint to codemetrics;
+grant select on fingerprint to codemetrics_web;
+
+create index ix_fingerprint__tkv on fingerprint(type,key,value);
+
+
+

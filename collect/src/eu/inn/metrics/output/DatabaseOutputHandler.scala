@@ -33,12 +33,15 @@ package eu.inn.metrics.output
 
 import eu.inn.metrics._
 import eu.inn.metrics.shell.GitVersion
-import java.sql.{DriverManager, Timestamp}
+import fingerprint.{TextFingerprintCalculator, TextFingerprint, FingerprintPart}
+import java.util.Date
 import util.matching.Regex
 import eu.inn.metrics.diff.DiffHandlerType
 
 import norma._
 import java.io.Closeable
+import java.sql.{Timestamp, DriverManager}
+import collection.mutable
 
 // Import the session management, including the implicit threadLocalSession
 import org.scalaquery.session._
@@ -184,6 +187,8 @@ class DatabaseOutputHandler(url: String, driver: String, force: Boolean)
   }
 
   var currentCommitId : Option[Long] = None
+  var currentCommitDt : Option[Date] = None
+
   def commit(c: RepositaryCommit) : Boolean = {
     println("-------------------------------")
     println("" + c.dt + " " + c.commitType + " " + c.name + " " + c.email + " " + c.hash)
@@ -204,6 +209,15 @@ class DatabaseOutputHandler(url: String, driver: String, force: Boolean)
         println("Removing existing metrics for commit " + c.hash + " #" + cmt.get + "...")
         SQL("delete from metric where commt_id={commt_id}").on("commt_id"->cmt.get).execute
 
+        println("Removing existing fingerprints for commit " + c.hash + " #" + cmt.get + "...")
+        SQL("delete from fingerprint where file_version_id in (select file_version_id from file_version where commt_id = {commt_id})").on("commt_id"->cmt.get).execute
+
+        println("Unlinking existing similar file versions for commit " + c.hash + " #" + cmt.get + "...")
+        SQL("update file_version set similar_file_version_id = null, similarity=0 where similar_file_version_id in (select file_version_id from file_version where commt_id = {commt_id})").on("commt_id"->cmt.get).execute
+
+        println("Removing existing file versions for commit " + c.hash + " #" + cmt.get + "...")
+        SQL("delete from file_version where commt_id = {commt_id}").on("commt_id"->cmt.get).execute
+
         println("Removing commit " + c.hash + " #" + cmt.get + "...")
         SQL("delete from commt where commt_id={commt_id}").on("commt_id"->cmt.get).execute
       }
@@ -215,6 +229,8 @@ class DatabaseOutputHandler(url: String, driver: String, force: Boolean)
         "commt_type"->c.commitType.id,
         "dt"->new Timestamp(c.dt.getMillis())
       ).executeInsert()
+
+      currentCommitDt = Some(c.dt.toDate)
       return true
     }
   }
@@ -249,6 +265,45 @@ class DatabaseOutputHandler(url: String, driver: String, force: Boolean)
         "value"->value
       ).execute()
     }
+
+    if (metrics.fingerprint.isDefined) {
+      val fp = metrics.fingerprint.get
+      val md5 = fp.nonWhitespaceMd5.toArray
+
+      val fileVersionId = SQL("insert into file_version(commt_id, file_id, similarity, nonws_md5) values({commt_id}, {file_id}, 0, {nonws_md5})").on(
+        "commt_id"->currentCommitId.get,
+        "file_id"->fileId,
+        "nonws_md5"->md5
+      ).executeInsert()
+
+      println("Inserted new version for the file, md5nws = " + md5.map(b => "%02x" format b).mkString)
+
+      val fsql = SQL("insert into fingerprint(file_version_id, type, key, value, line_count) values({file_version_id}, {type}, {key}, {value}, {line_count})")
+
+      for(p<-fp.fingerprintA) {
+        fsql.on(
+          "file_version_id"->fileVersionId,
+          "type"->'A',
+          "key"->p.key,
+          "value"->p.value,
+          "line_count"->p.lineCount
+        ).execute
+      }
+
+      for(p<-fp.fingerprintB) {
+        fsql.on(
+          "file_version_id"->fileVersionId,
+          "type"->'B',
+          "key"->p.key,
+          "value"->p.value,
+        "line_count"->p.lineCount
+        ).execute
+      }
+
+      if (metrics.isNewFile) {
+        updateSimilarFiles(fileVersionId.get, metrics)
+      }
+    }
     println()
   }
 
@@ -258,7 +313,7 @@ class DatabaseOutputHandler(url: String, driver: String, force: Boolean)
 
   def setProgress(current: Int, maximum: Int) {
     val percent = (current * 100.0) / maximum
-    println("Completed " + ("%.2ff" format percent) + "%")
+    println("Completed " + ("%.2f" format percent) + "%")
   }
 
   private var fileCategoryMap = scala.collection.mutable.Map[String, Int]()
@@ -303,4 +358,117 @@ class DatabaseOutputHandler(url: String, driver: String, force: Boolean)
       }
     }
   }
+
+  def updateSimilarFiles(fileVersionId: Long, metrics: FileMetrics) = {
+    println("Looking for exactly equal files for " + metrics.fileName + " version = " + fileVersionId + "...")
+
+    val upds = SQL("update file_version set similar_file_version_id={similar_file_version_id}, similarity={similarity} where file_version_id={file_version_id}")
+
+    var prevFvId : Option[Long] = None
+    SQL(
+      """
+        |select c.dt, fv.file_version_id, fv.similarity, fv.similar_file_version_id from
+        |file_version fvo
+        |join file_version fv on (fv.nonws_md5 = fvo.nonws_md5)
+        |join commt c on (c.commt_id = fv.commt_id)
+        |where fvo.file_version_id = {file_version_id}
+        |order by dt;
+      """.stripMargin
+    ).on("file_version_id"->fileVersionId).apply().foreach{ row =>
+
+      val fvId = row[Long]("file_version_id")
+      val similarFvId = row[Option[Long]]("similar_file_version_id")
+
+      if (!prevFvId.isEmpty && prevFvId != similarFvId) {
+        println("Updating exact match. Now file " + fvId + " is version of " + prevFvId)
+        upds.on(
+          "file_version_id"->fvId,
+          "similar_file_version_id"->prevFvId.get,
+          "similarity"->1.0
+        ).execute()
+      }
+      prevFvId = Some(fvId)
+    }
+
+    val fpx = selectFingerprint(fileVersionId)
+    var maxSimilarityBefore = 0.0
+    var similarFileBeforeId : Option[Long] = None
+
+    println("Looking for similar files for " + metrics.fileName + " version = " + fileVersionId + "...")
+    SQL(
+      """
+        |select c.dt, fv.file_version_id, fv.similar_file_version_id, fv.similarity
+        |from file_version fv
+        |join commt c on (c.commt_id = fv.commt_id)
+        |where fv.similarity < 1.0 and file_version_id in
+        |(select distinct fp.file_version_id from file_version fvo
+        |join fingerprint fpo on (fvo.file_version_id = fpo.file_version_id)
+        |join fingerprint fp on ((fp.type = fpo.type) and (fp.key = fpo.key) and (fp.value = fpo.value))
+        |where fvo.file_version_id = {file_version_id} and fp.file_version_id != {file_version_id})
+      """.stripMargin
+    ).on("file_version_id"->fileVersionId).apply().foreach{ row =>
+
+      val dt = row[Date]("dt")
+      val fvId = row[Long]("file_version_id")
+      val similarFvId = row[Option[Long]]("similar_file_version_id")
+      val similarity = row[Float]("similarity")
+
+      val fpy = selectFingerprint(fvId)
+
+      val newSimilarity = TextFingerprintCalculator.getSimilarity(fpx, fpy)
+      if (dt.before(currentCommitDt.get)) {
+        if (newSimilarity > maxSimilarityBefore) {
+          maxSimilarityBefore = newSimilarity
+          similarFileBeforeId = Some(fvId)
+        }
+      }
+      else {
+        if (newSimilarity > similarity) {
+          println("Previous file is similar to current for "+
+            ("%.2f" format newSimilarity*100)+
+            "%. Now file " + fvId + " is version of " + fileVersionId)
+          upds.on(
+            "file_version_id"->fvId,
+            "similar_file_version_id"->fileVersionId,
+            "similarity"->newSimilarity
+          ).execute()
+        }
+      }
+    }
+
+    if (similarFileBeforeId.isDefined) {
+      println("This file is similar to previous file for "+
+        ("%.2f" format maxSimilarityBefore*100)+
+        "%. Now file " + fileVersionId + " is version of " + similarFileBeforeId.get)
+      upds.on(
+        "file_version_id"->fileVersionId,
+        "similar_file_version_id"->similarFileBeforeId.get,
+        "similarity"->maxSimilarityBefore
+      ).execute()
+    }
+  }
+
+  def selectFingerprint(fileVersionId: Long) = {
+
+    val a = new mutable.MutableList[FingerprintPart]()
+    val b = new mutable.MutableList[FingerprintPart]()
+
+    SQL(
+      """
+        |select type, key, value, line_count from fingerprint where file_version_id={file_version_id}
+      """.stripMargin
+    ).on("file_version_id"->fileVersionId).apply().foreach{ row =>
+
+      val typ = row[String]("type")
+      val key = row[Int]("key")
+      val value = row[Int]("value")
+      val lineCount = row[Int]("line_count")
+
+      val l = if (typ == "A") a else b
+      l += FingerprintPart(key, value, lineCount)
+    }
+
+    TextFingerprint(Seq[Byte](), a, b)
+  }
+
 }
