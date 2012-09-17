@@ -311,6 +311,7 @@ create table file_version
     similar_file_version_id bigint null,
     similarity float4 not null,
     nonws_md5 bytea not null,
+    is_new bool not null,
     constraint pk_file_version primary key (file_version_id),
     constraint fk_file_version__commt foreign key (commt_id) references commt(commt_id),
     constraint fk_file_version__file foreign key (file_id) references file(file_id),

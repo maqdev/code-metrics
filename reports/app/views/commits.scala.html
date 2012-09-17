@@ -16,7 +16,10 @@
             @if(c.locExclude.changedLoc>0){<span class='loc exclude'>@c.locExclude.changedLoc</span>}</td>
         <td>
             @for((path,stat) <- c.files) {
-                <span class='commit-file @if(c.exclude||stat.exclude){exclude}'>@path: [@stat.loc.newLoc/@stat.loc.changedLoc] @if(stat.fileCategory.isDefined){(@stat.fileCategory.get)}</span><br/>
+                <span class='commit-file @if(c.exclude||stat.exclude){exclude}'>@path: [@stat.loc.newLoc/@stat.loc.changedLoc]
+                    @if(stat.similarity > 0){<span class='similarity'>@controllers.Util.fmtDouble(stat.similarity*100)%</span>}
+                    @if(stat.fileCategory.isDefined){(@stat.fileCategory.get)}
+                </span><br/>
             }
         </td>
     </tr>

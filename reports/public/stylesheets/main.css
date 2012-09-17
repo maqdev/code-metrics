@@ -9,3 +9,4 @@ table th { padding: 4px; text-align: left; border: 1px #fff solid; background: #
 table tr.exclude { color: gray; }
 span.commit-file { font-size: 8pt; }
 span.exclude { color: gray; }
+span.similarity { color: red; }

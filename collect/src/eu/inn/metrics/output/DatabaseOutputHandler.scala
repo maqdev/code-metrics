@@ -270,13 +270,14 @@ class DatabaseOutputHandler(url: String, driver: String, force: Boolean)
       val fp = metrics.fingerprint.get
       val md5 = fp.nonWhitespaceMd5.toArray
 
-      val fileVersionId = SQL("insert into file_version(commt_id, file_id, similarity, nonws_md5) values({commt_id}, {file_id}, 0, {nonws_md5})").on(
+      val fileVersionId = SQL("insert into file_version(commt_id, file_id, similarity, nonws_md5, is_new) values({commt_id}, {file_id}, 0, {nonws_md5}, {is_new})").on(
         "commt_id"->currentCommitId.get,
         "file_id"->fileId,
-        "nonws_md5"->md5
+        "nonws_md5"->md5,
+        "is_new"->metrics.isNewFile
       ).executeInsert()
 
-      println("Inserted new version for the file, md5nws = " + md5.map(b => "%02x" format b).mkString)
+      println("Inserted new version for the file, md5nws = " + md5.map(b => "%02x" format b).mkString + " file version is " + fileVersionId)
 
       val fsql = SQL("insert into fingerprint(file_version_id, type, key, value, line_count) values({file_version_id}, {type}, {key}, {value}, {line_count})")
 
@@ -300,9 +301,7 @@ class DatabaseOutputHandler(url: String, driver: String, force: Boolean)
         ).execute
       }
 
-      if (metrics.isNewFile) {
-        updateSimilarFiles(fileVersionId.get, metrics)
-      }
+      updateSimilarFiles(fileVersionId.get, metrics)
     }
     println()
   }
@@ -397,7 +396,7 @@ class DatabaseOutputHandler(url: String, driver: String, force: Boolean)
     println("Looking for similar files for " + metrics.fileName + " version = " + fileVersionId + "...")
     SQL(
       """
-        |select c.dt, fv.file_version_id, fv.similar_file_version_id, fv.similarity
+        |select c.dt, fv.file_version_id, fv.similarity
         |from file_version fv
         |join commt c on (c.commt_id = fv.commt_id)
         |where fv.similarity < 1.0 and file_version_id in
@@ -410,7 +409,6 @@ class DatabaseOutputHandler(url: String, driver: String, force: Boolean)
 
       val dt = row[Date]("dt")
       val fvId = row[Long]("file_version_id")
-      val similarFvId = row[Option[Long]]("similar_file_version_id")
       val similarity = row[Float]("similarity")
 
       val fpy = selectFingerprint(fvId)

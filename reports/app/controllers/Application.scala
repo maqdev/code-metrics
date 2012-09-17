@@ -1,12 +1,11 @@
 package controllers
 
 import play.api.mvc._
-import anorm._
+import norma._
 import play.api.db.DB
 import play.api.Play.current
 import java.util.Date
 import collection.mutable
-import anorm.SqlRow
 import scala.Some
 import java.text.SimpleDateFormat
 import org.joda.time.format.{DateTimeFormat}
@@ -20,7 +19,7 @@ case class Loc(newLoc: Int, changedLoc: Int) {
 }
 case class TotalResultRow(dt: String, loc: Loc, authors: Set[String], fileTypes: Set[String])
 case class AuthorResultRow(dt: String, loc: Loc, fileTypes: Map[String, Loc], projects: Map[String, Loc])
-case class CommitFileStat(fileCategory: Option[String], loc: Loc, exclude: Boolean)
+case class CommitFileStat(fileCategory: Option[String], loc: Loc, exclude: Boolean, similarity: Double)
 case class CommitResultRow(projectName: String, hash: String, dt: String, loc: Loc, locExclude : Loc, exclude: Boolean, files: Map[String, CommitFileStat])
 
 object Helper {
@@ -90,7 +89,9 @@ object Application extends Controller {
   def authors(authorId: Int, period: String) = Action {
     val query =
       """
-        |select date_trunc({period}, c.dt) period, mt.name mt, sum(m.value) mt_val, ft.name ft, p.name project_name
+        |select date_trunc({period}, c.dt) period, mt.name mt,
+        |sum(m.value * case when fv.is_new then 1.0-fv.similarity else 1.0 end)::int mt_val,
+        |ft.name ft, p.name project_name
         |from commt c
         |join metric m on (c.commt_id = m.commt_id)
         |join metric_type mt on (m.metric_type_id = mt.metric_type_id)
@@ -98,6 +99,7 @@ object Application extends Controller {
         |join file f on (m.file_id = f.file_id)
         |join file_type ft on (f.file_type_id = ft.file_type_id)
         |left join file_category fc on (fc.file_category_id = f.file_category_id)
+        |left join file_version fv on (fv.file_id = f.file_id and fv.commt_id = c.commt_id)
         |where (mt.name in ('!= loc', '+ loc'))
         |and c.author_id = {author_id}
         |and not c.exclude
@@ -179,7 +181,9 @@ object Application extends Controller {
 
     val query =
       """
-        |select date_trunc({period}, c.dt) period, mt.name mt, sum(m.value) mt_val, ft.name ft, a.name author
+        |select date_trunc({period}, c.dt) period, mt.name mt,
+        |sum(m.value * case when fv.is_new then 1.0-fv.similarity else 1.0 end)::int mt_val,
+        |ft.name ft, a.name author
         |from commt c
         |join author a on (a.author_id = c.author_id)
         |join metric m on (c.commt_id = m.commt_id)
@@ -188,6 +192,7 @@ object Application extends Controller {
         |join file f on (m.file_id = f.file_id)
         |join file_type ft on (f.file_type_id = ft.file_type_id)
         |left join file_category fc on (fc.file_category_id = f.file_category_id)
+        |left join file_version fv on (fv.file_id = f.file_id and fv.commt_id = c.commt_id)
         |where (mt.name in ('!= loc', '+ loc'))
         |and not c.exclude
         |and not ft.exclude
@@ -223,7 +228,9 @@ object Application extends Controller {
 
     val query =
       """
-        |select p.name project_name, c.hash, c.dt, c.exclude, f.path, fc.name as file_category, (ft.exclude or coalesce(fc.exclude, false)) file_exclude, mt.name as mt, sum(m.value) mt_val
+        |select p.name project_name, c.hash, c.dt, c.exclude, f.path, fc.name as file_category,
+        |(ft.exclude or coalesce(fc.exclude, false)) file_exclude, mt.name as mt, sum(m.value) mt_val,
+        |fv.similarity, fv.is_new
         |from commt c
         |join metric m on (c.commt_id = m.commt_id)
         |join metric_type mt on (m.metric_type_id = mt.metric_type_id)
@@ -231,10 +238,11 @@ object Application extends Controller {
         |join file f on (m.file_id = f.file_id)
         |join file_type ft on (f.file_type_id = ft.file_type_id)
         |left join file_category fc on (fc.file_category_id = f.file_category_id)
+        |left join file_version fv on (fv.file_id = f.file_id and fv.commt_id = c.commt_id)
         |where (mt.name in ('!= loc', '+ loc'))
         |and c.author_id = {author_id}
         |and date_trunc({period}, c.dt) = {dt}
-        |group by project_name, c.hash, c.dt, c.exclude, f.path, fc.name, mt, file_exclude
+        |group by project_name, c.hash, c.dt, c.exclude, f.path, fc.name, mt, file_exclude, fv.similarity, fv.is_new
         |order by project_name
       """.stripMargin
 
@@ -255,17 +263,25 @@ object Application extends Controller {
         val filePath = row[String]("path")
         val fileCategory = row[Option[String]]("file_category")
         val locCurr = convLoc(row)
-        val loc = if (exclude || fileExclude) Loc(0,0) else locCurr
-        val locExclude = if (exclude || fileExclude) locCurr else Loc(0,0)
+        var loc = if (exclude || fileExclude) Loc(0,0) else locCurr
+        var locExclude = if (exclude || fileExclude) locCurr else Loc(0,0)
+
+        val is_new = row[Option[Boolean]]("is_new")
+
+        val similarity = if (is_new.isDefined && is_new.get) row[Float]("similarity") else 0
+        if (similarity > 0 && loc.newLoc > 0) {
+          locExclude = locExclude.copy(newLoc = (loc.newLoc * similarity).toInt)
+          loc = loc.copy(newLoc = (loc.newLoc * math.max(1.0 - similarity, 0)).toInt)
+        }
 
         if (a.isEmpty || a.get.hash != hash) {
-          (a, Some(CommitResultRow(projectName, hash, dt, loc, locExclude, exclude, Map(filePath -> CommitFileStat(fileCategory, loc, fileExclude)))))
+          (a, Some(CommitResultRow(projectName, hash, dt, loc, locExclude, exclude, Map(filePath -> CommitFileStat(fileCategory, loc, fileExclude, similarity)))))
         } else {
           val prev = a.get
           val lf = if (prev.files.contains(filePath)) {loc + prev.files.get(filePath).get.loc} else loc
 
           (Some(CommitResultRow(projectName, hash, dt, prev.loc + loc, prev.locExclude + locExclude,
-            exclude, prev.files ++ Map(filePath -> CommitFileStat(fileCategory, lf, fileExclude)))), None)
+            exclude, prev.files ++ Map(filePath -> CommitFileStat(fileCategory, lf, fileExclude, similarity)))), None)
         }
       })
 

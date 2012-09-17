@@ -22,7 +22,6 @@
       <excludeFolder url="file://$MODULE_DIR$/../target/scala-2.9.1/cache" />
       <excludeFolder url="file://$MODULE_DIR$/../target/scala-2.9.1/classes" />
       <excludeFolder url="file://$MODULE_DIR$/../target/scala-2.9.1/classes_managed" />
-      <excludeFolder url="file://$MODULE_DIR$/../target/scala-2.9.1/test-classes" />
       <excludeFolder url="file://$MODULE_DIR$/../target/streams" />
     </content>
     <orderEntry type="inheritedJdk" />
@@ -69,7 +68,6 @@
     <orderEntry type="library" name="tyrex_tyrex_1.0.1" level="project" />
     <orderEntry type="library" name="jaxen_jaxen_1.1.3" level="project" />
     <orderEntry type="library" name="net.sf.ehcache_ehcache-core_2.5.0" level="project" />
-    <orderEntry type="library" name="org.scalaquery_scalaquery_2.9.1_0.10.0-M1" level="project" />
     <orderEntry type="library" name="postgresql_postgresql_9.1-901.jdbc4" level="project" />
     <orderEntry type="library" name="joda-time_joda-time_2.1" level="project" />
     <orderEntry type="library" name="org.joda_joda-convert_1.2" level="project" />
@@ -114,7 +112,7 @@
     <orderEntry type="library" scope="TEST" name="org.seleniumhq.selenium_selenium-support_2.16.1_test" level="project" />
     <orderEntry type="library" scope="TEST" name="org.easytesting_fest-assert_1.4_test" level="project" />
     <orderEntry type="library" scope="TEST" name="org.easytesting_fest-util_1.1.6_test" level="project" />
-    <orderEntry type="library" name="dal.jar" level="project" />
+    <orderEntry type="library" name="norma.jar" level="project" />
     <orderEntry type="module-library">
       <library>
         <CLASSES>
