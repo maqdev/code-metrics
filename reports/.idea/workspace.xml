@@ -1,15 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="b583766e-d607-406c-b418-18c162b9d8df" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../collect/src/eu/inn/metrics/FileMetrics.scala" afterPath="$PROJECT_DIR$/../collect/src/eu/inn/metrics/FileMetrics.scala" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../collect/src/eu/inn/metrics/diff/BinaryDiffHandler.scala" afterPath="$PROJECT_DIR$/../collect/src/eu/inn/metrics/diff/BinaryDiffHandler.scala" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../collect/src/eu/inn/metrics/diff/ClocDiffHandler.scala" afterPath="$PROJECT_DIR$/../collect/src/eu/inn/metrics/diff/ClocDiffHandler.scala" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../collect/src/eu/inn/metrics/diff/SkipDiffHandler.scala" afterPath="$PROJECT_DIR$/../collect/src/eu/inn/metrics/diff/SkipDiffHandler.scala" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../collect/src/eu/inn/metrics/fingerprint/TextFingerprintCalculator.scala" afterPath="$PROJECT_DIR$/../collect/src/eu/inn/metrics/fingerprint/TextFingerprintCalculator.scala" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../collect/src/eu/inn/metrics/output/DatabaseOutputHandler.scala" afterPath="$PROJECT_DIR$/../collect/src/eu/inn/metrics/output/DatabaseOutputHandler.scala" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../db/v/00-create-db.sql" afterPath="$PROJECT_DIR$/../db/v/00-create-db.sql" />
-    </list>
+    <list default="true" id="b583766e-d607-406c-b418-18c162b9d8df" name="Default" comment="" />
     <ignored path="reports.iws" />
     <ignored path=".idea/workspace.xml" />
     <option name="TRACKING_ENABLED" value="true" />
