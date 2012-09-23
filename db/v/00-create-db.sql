@@ -150,12 +150,11 @@ create table file_category
     name varchar(120) not null,
     regex varchar(4096) not null,
     priority int not null,
-    file_type_id int null,
     diff_handler varchar(120) null,
+    cloc_language varchar(120) null,
     exclude boolean not null default false,
    	constraint pk_file_category primary key (file_category_id),
-    constraint fk_file_category__project foreign key (project_id) references project(project_id),
-    constraint fk_file_category__file_type foreign key (file_type_id) references file_type(file_type_id)
+    constraint fk_file_category__project foreign key (project_id) references project(project_id)
 );
 
 grant select,insert,update on file_category to codemetrics_admin;

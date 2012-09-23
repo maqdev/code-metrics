@@ -33,7 +33,7 @@ package eu.inn.metrics.output
 
 import eu.inn.metrics._
 import eu.inn.metrics.shell.GitVersion
-import fingerprint.{TextFingerprintCalculator, TextFingerprint, FingerprintPart}
+import fingerprint.{TextFingerprintArrays, TextFingerprintCalculator, TextFingerprint, FingerprintPart}
 import java.util.Date
 import util.matching.Regex
 import eu.inn.metrics.diff.DiffHandlerType
@@ -42,6 +42,7 @@ import norma._
 import java.io.Closeable
 import java.sql.{Timestamp, DriverManager}
 import collection.mutable
+import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap
 
 // Import the session management, including the implicit threadLocalSession
 import org.scalaquery.session._
@@ -301,6 +302,8 @@ class DatabaseOutputHandler(url: String, driver: String, force: Boolean)
         ).execute
       }
 
+      val r = TextFingerprintCalculator.getTextFingerprintArrays(metrics.fingerprint.get)
+      fingerprintCache.put(fileVersionId.get, r)
       updateSimilarFiles(fileVersionId.get, metrics)
     }
     println()
@@ -322,9 +325,8 @@ class DatabaseOutputHandler(url: String, driver: String, force: Boolean)
 
     SQL(
       """
-        |select fc.file_category_id, fc.name, fc.regex, fc.diff_handler, ft.name ft_name, fc.priority
+        |select fc.file_category_id, fc.name, fc.regex, fc.diff_handler, fc.cloc_language, fc.priority
         |from file_category fc
-        |left join file_type ft on (fc.file_type_id = ft.file_type_id)
         |where coalesce(fc.project_id, {project_id}) = {project_id}
         |order by fc.priority
       """.stripMargin
@@ -335,7 +337,7 @@ class DatabaseOutputHandler(url: String, driver: String, force: Boolean)
       val name = r[String]("name")
       val regex = r[String]("regex")
       val diffHandler = r[Option[String]]("diff_handler")
-      val fileTypeName = r[Option[String]]("ft_name")
+      val clocLanguage = r[Option[String]]("cloc_language")
       val priority = r[Int]("priority")
 
       ftl.append(FileCategoryRegex(name, new Regex(regex), priority,
@@ -343,7 +345,7 @@ class DatabaseOutputHandler(url: String, driver: String, force: Boolean)
           case Some(x) => Some(DiffHandlerType.withName(x))
           case None => None
         },
-        fileTypeName //how is this will be handled
+        clocLanguage
       ))
       fileCategoryMap += (name -> fileCategoryId)
     }
@@ -394,6 +396,7 @@ class DatabaseOutputHandler(url: String, driver: String, force: Boolean)
     var similarFileBeforeId : Option[Long] = None
 
     println("Looking for similar files for " + metrics.fileName + " version = " + fileVersionId + "...")
+    var count : Int = 0
     SQL(
       """
         |select c.dt, fv.file_version_id, fv.similarity
@@ -406,7 +409,7 @@ class DatabaseOutputHandler(url: String, driver: String, force: Boolean)
         |where fvo.file_version_id = {file_version_id} and fp.file_version_id != {file_version_id})
       """.stripMargin
     ).on("file_version_id"->fileVersionId).apply().foreach{ row =>
-
+      count += 1
       val dt = row[Date]("dt")
       val fvId = row[Long]("file_version_id")
       val similarity = row[Float]("similarity")
@@ -434,6 +437,7 @@ class DatabaseOutputHandler(url: String, driver: String, force: Boolean)
       }
     }
 
+    println("For " + metrics.fileName + " version = " + fileVersionId + " processed " + count + " similar files.")
     if (similarFileBeforeId.isDefined) {
       println("This file is similar to previous file for "+
         ("%.2f" format maxSimilarityBefore*100)+
@@ -446,27 +450,42 @@ class DatabaseOutputHandler(url: String, driver: String, force: Boolean)
     }
   }
 
-  def selectFingerprint(fileVersionId: Long) = {
+  lazy val fingerprintCache = {
+    val result = new ConcurrentLinkedHashMap.Builder[Long, TextFingerprintArrays]()
+    result.maximumWeightedCapacity(256000) // 256000 versions hold in cache, each ~ 512bytes, todo: move to config
+    result.build()
+  }
 
-    val a = new mutable.MutableList[FingerprintPart]()
-    val b = new mutable.MutableList[FingerprintPart]()
+  def selectFingerprint(fileVersionId: Long) : TextFingerprintArrays = {
 
-    SQL(
-      """
-        |select type, key, value, line_count from fingerprint where file_version_id={file_version_id}
-      """.stripMargin
-    ).on("file_version_id"->fileVersionId).apply().foreach{ row =>
+    val fp = fingerprintCache.get(fileVersionId)
+    if (fp == null) {
+      println("Fetching fingerprints for version = " + fileVersionId + "...")
 
-      val typ = row[String]("type")
-      val key = row[Int]("key")
-      val value = row[Int]("value")
-      val lineCount = row[Int]("line_count")
+      val a = new mutable.MutableList[FingerprintPart]()
+      val b = new mutable.MutableList[FingerprintPart]()
 
-      val l = if (typ == "A") a else b
-      l += FingerprintPart(key, value, lineCount)
+      SQL(
+        """
+          |select type, key, value, line_count from fingerprint where file_version_id={file_version_id}
+        """.stripMargin
+      ).on("file_version_id"->fileVersionId).apply().foreach{ row =>
+
+        val typ = row[String]("type")
+        val key = row[Int]("key")
+        val value = row[Int]("value")
+        val lineCount = row[Int]("line_count")
+
+        val l = if (typ == "A") a else b
+        l += FingerprintPart(key, value, lineCount)
+      }
+
+      val r = TextFingerprintCalculator.getTextFingerprintArrays(TextFingerprint(Seq[Byte](), a, b))
+      fingerprintCache.put(fileVersionId, r)
+      r
     }
-
-    TextFingerprint(Seq[Byte](), a, b)
+    else
+      fp
   }
 
 }

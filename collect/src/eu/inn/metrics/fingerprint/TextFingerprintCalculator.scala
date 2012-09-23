@@ -54,7 +54,9 @@ object TextFingerprintCalculator {
   private final val calc = new TextFingerprintCalculator(precision)
 
   def getFingerprint(textReader: BufferedReader) = calc.getFingerprint(textReader)
-  def getSimilarity(x: TextFingerprint, y: TextFingerprint) = calc.getSimilarity(x, y)
+  def getSimilarity(x: TextFingerprintArrays, y: TextFingerprintArrays) = calc.getSimilarity(x, y)
+  def getTextFingerprintArrays(x: TextFingerprint) = calc.getTextFingerprintArrays(x)
+
 }
 
 class TextFingerprintCalculator(precision: Int) {
@@ -130,7 +132,11 @@ class TextFingerprintCalculator(precision: Int) {
     TextFingerprint(if (lines.isEmpty) Seq[Byte]() else md5.digest().toSeq, partsA.toSeq, partsB.toSeq)
   }
 
-  def getSimilarity(x: TextFingerprint, y: TextFingerprint) : Double = {
+  def getTextFingerprintArrays(x: TextFingerprint) = {
+    TextFingerprintArrays(x.nonWhitespaceMd5, getFingerprintArray(x.fingerprintA), getFingerprintArray(x.fingerprintB))
+  }
+
+  def getSimilarity(x: TextFingerprintArrays, y: TextFingerprintArrays) : Double = {
     if (!x.nonWhitespaceMd5.isEmpty && x.nonWhitespaceMd5 == y.nonWhitespaceMd5) return 1.0
 
     val similarityA = getSimilarityForParts(x.fingerprintA, y.fingerprintA)
@@ -139,16 +145,13 @@ class TextFingerprintCalculator(precision: Int) {
     math.max(math.max(similarityA, similarityB), 0)
   }
 
-  private def getSimilarityForParts(x: Seq[FingerprintPart], y: Seq[FingerprintPart]) = {
-    val (xa, xLineCount) = getFingerprintAsArrays(x)
-    val (ya, yLineCount) = getFingerprintAsArrays(y)
-
-    val lineWeight = 1.0/(xLineCount+yLineCount)
+  private def getSimilarityForParts(x: FingerprintArray, y: FingerprintArray) = {
+    val lineWeight = 1.0/(x.lineCount + y.lineCount)
     var similarity = 1.0
 
     for (i <- 0 until precision) {
-      val xp = xa(i)
-      val yp = ya(i)
+      val xp = x.a(i)
+      val yp = y.a(i)
 
       if (xp != null && yp != null) {
         if (xp.value == yp.value)
@@ -166,7 +169,7 @@ class TextFingerprintCalculator(precision: Int) {
     similarity
   }
 
-  private def getFingerprintAsArrays(parts: Seq[FingerprintPart]) = {
+  private def getFingerprintArray(parts: Seq[FingerprintPart]) = {
     val a = new Array[FingerprintPart](precision)
 
     var lineCount = 0
@@ -178,6 +181,6 @@ class TextFingerprintCalculator(precision: Int) {
       lineCount += p.lineCount
     }
 
-    (a, lineCount)
+    FingerprintArray(a, lineCount)
   }
 }

@@ -13,6 +13,10 @@ class TextFingerprintCalculatorTest extends FlatSpec {
     calc.getFingerprint(readerFromString(s))
   }
 
+  def fingerprintFromStringArrays(s: String) = {
+    calc.getTextFingerprintArrays(fingerprintFromString(s))
+  }
+
   "A TextFingerprintCalculator" should "return empty TextFingerprints for empty text" in {
     val fp = fingerprintFromString("")
     assert(fp.fingerprintA.isEmpty)
@@ -34,16 +38,16 @@ class TextFingerprintCalculatorTest extends FlatSpec {
   }
 
   "A TextFingerprintCalculator" should " show show totally different similarity for different texts" in {
-    val a = fingerprintFromString("1")
-    val b = fingerprintFromString("2")
+    val a = fingerprintFromStringArrays("1")
+    val b = fingerprintFromStringArrays("2")
 
     val similarity = calc.getSimilarity(a,b)
     assert(similarity <= 0.01)
   }
 
   "A TextFingerprintCalculator" should " show show 100% similarity for same texts ignoring whitespace and empty lines" in {
-    val a = fingerprintFromString("1\n2\n3\n4\n5")
-    val b = fingerprintFromString("1\t\n 2\n3\n\n4\n5 ")
+    val a = fingerprintFromStringArrays("1\n2\n3\n4\n5")
+    val b = fingerprintFromStringArrays("1\t\n 2\n3\n\n4\n5 ")
 
     val similarity = calc.getSimilarity(a,b)
     assert(similarity >= 0.99)
@@ -51,28 +55,28 @@ class TextFingerprintCalculatorTest extends FlatSpec {
 
   "A getSimilarity" should " return ~90% similarity" in {
     val similarity1 = calc.getSimilarity(
-      fingerprintFromString("0\n1\n2\n3\n4\n5\n6\n7\n8\n9"),
-      fingerprintFromString("0\n1\n2\n3\n4\n5\n6\n7\n8\n$")
+      fingerprintFromStringArrays("0\n1\n2\n3\n4\n5\n6\n7\n8\n9"),
+      fingerprintFromStringArrays("0\n1\n2\n3\n4\n5\n6\n7\n8\n$")
     )
 
     val similarity2 = calc.getSimilarity(
-      fingerprintFromString("0\n1\n2\n3\n4\n5\n6\n7\n8\n9"),
-      fingerprintFromString("0\n1\n2\n3\n$\n5\n6\n7\n8\n9")
+      fingerprintFromStringArrays("0\n1\n2\n3\n4\n5\n6\n7\n8\n9"),
+      fingerprintFromStringArrays("0\n1\n2\n3\n$\n5\n6\n7\n8\n9")
     )
 
     val similarity3 = calc.getSimilarity(
-      fingerprintFromString("0\n1\n2\n3\n4\n5\n6\n7\n8\n9"),
-      fingerprintFromString("0\n1\n$\n3\n4\n5\n6\n7\n8\n9")
+      fingerprintFromStringArrays("0\n1\n2\n3\n4\n5\n6\n7\n8\n9"),
+      fingerprintFromStringArrays("0\n1\n$\n3\n4\n5\n6\n7\n8\n9")
     )
 
     val similarity4 = calc.getSimilarity(
-      fingerprintFromString("0\n1\n2\n3\n4\n5\n6\n7\n8\n9"),
-      fingerprintFromString("0\n1\n2\n3\n4\n5\n6\n7\n8")
+      fingerprintFromStringArrays("0\n1\n2\n3\n4\n5\n6\n7\n8\n9"),
+      fingerprintFromStringArrays("0\n1\n2\n3\n4\n5\n6\n7\n8")
     )
 
     val similarity5 = calc.getSimilarity(
-      fingerprintFromString("0\n1\n2\n3\n4\n5\n6\n7\n8\n9"),
-      fingerprintFromString("0\n2\n3\n4\n5\n6\n7\n8\n9")
+      fingerprintFromStringArrays("0\n1\n2\n3\n4\n5\n6\n7\n8\n9"),
+      fingerprintFromStringArrays("0\n2\n3\n4\n5\n6\n7\n8\n9")
     )
 
     assert(similarity1 >= 0.85 && similarity1 <= 0.95)
@@ -84,18 +88,18 @@ class TextFingerprintCalculatorTest extends FlatSpec {
 
   "A getSimilarity" should " return ~50% similarity" in {
     val similarity1 = calc.getSimilarity(
-      fingerprintFromString("0\n1\n2\n3\n4\n5\n6\n7\n8\n9"),
-      fingerprintFromString("0\n$\n2\n$\n4\n$\n6\n$\n8\n$")
+      fingerprintFromStringArrays("0\n1\n2\n3\n4\n5\n6\n7\n8\n9"),
+      fingerprintFromStringArrays("0\n$\n2\n$\n4\n$\n6\n$\n8\n$")
     )
 
     val similarity2 = calc.getSimilarity(
-      fingerprintFromString("0\n1\n2\n3\n4\n5\n6\n7\n8\n9"),
-      fingerprintFromString("0\n1\n2\n3")
+      fingerprintFromStringArrays("0\n1\n2\n3\n4\n5\n6\n7\n8\n9"),
+      fingerprintFromStringArrays("0\n1\n2\n3")
     )
 
     val similarity3 = calc.getSimilarity(
-      fingerprintFromString("0\n1\n2\n3\n4\n5\n6\n7\n8\n9"),
-      fingerprintFromString("0\n1\n2\n3\n4\na\nb\nc\nd\ne")
+      fingerprintFromStringArrays("0\n1\n2\n3\n4\n5\n6\n7\n8\n9"),
+      fingerprintFromStringArrays("0\n1\n2\n3\n4\na\nb\nc\nd\ne")
     )
 
     assert(similarity1 >= 0.45 && similarity1 <= 0.55)
