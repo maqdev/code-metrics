@@ -29,6 +29,7 @@
     <orderEntry type="library" name="norma_jar" level="project" />
     <orderEntry type="library" scope="TEST" name="org.scalatest:scalatest_2.9.1:2.0.M4" level="project" />
     <orderEntry type="library" name="com.googlecode.concurrentlinkedhashmap:concurrentlinkedhashmap-lru:1.3.1" level="project" />
+    <orderEntry type="library" name="com.google.code.simple-spring-memcached:spymemcached-provider:3.0.1" level="project" />
   </component>
 </module>
 

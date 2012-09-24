@@ -43,6 +43,9 @@ import java.io.Closeable
 import java.sql.{Timestamp, DriverManager}
 import collection.mutable
 import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap
+import scala.util.control.Breaks._
+import net.spy.memcached.MemcachedClient
+import java.net.InetSocketAddress
 
 // Import the session management, including the implicit threadLocalSession
 import org.scalaquery.session._
@@ -303,7 +306,7 @@ class DatabaseOutputHandler(url: String, driver: String, force: Boolean)
       }
 
       val r = TextFingerprintCalculator.getTextFingerprintArrays(metrics.fingerprint.get)
-      fingerprintCache.put(fileVersionId.get, r)
+      putIntoCache(fileVersionId.get, r)
       updateSimilarFiles(fileVersionId.get, metrics)
     }
     println()
@@ -448,18 +451,22 @@ class DatabaseOutputHandler(url: String, driver: String, force: Boolean)
         "similarity"->maxSimilarityBefore
       ).execute()
     }
+
+    waitForCacheOp()
   }
+
+  final val fingerprintCacheSize = 256000
 
   lazy val fingerprintCache = {
     val result = new ConcurrentLinkedHashMap.Builder[Long, TextFingerprintArrays]()
-    result.maximumWeightedCapacity(256000) // 256000 versions hold in cache, each ~ 512bytes, todo: move to config
+    result.maximumWeightedCapacity(fingerprintCacheSize) // 256000 versions hold in cache, each ~ 512bytes, todo: move to config
     result.build()
   }
 
   def selectFingerprint(fileVersionId: Long) : TextFingerprintArrays = {
 
-    val fp = fingerprintCache.get(fileVersionId)
-    if (fp == null) {
+    val fp = getFromCache(fileVersionId)
+    if (fp.isEmpty) {
       println("Fetching fingerprints for version = " + fileVersionId + "...")
 
       val a = new mutable.MutableList[FingerprintPart]()
@@ -481,11 +488,52 @@ class DatabaseOutputHandler(url: String, driver: String, force: Boolean)
       }
 
       val r = TextFingerprintCalculator.getTextFingerprintArrays(TextFingerprint(Seq[Byte](), a, b))
-      fingerprintCache.put(fileVersionId, r)
+      putIntoCache(fileVersionId, r)
       r
     }
     else
-      fp
+      fp.get
   }
 
+  val useMemcached = true
+  lazy val memcached = {
+    new MemcachedClient(
+      new InetSocketAddress("localhost", 11211));
+  }
+
+  def waitForCacheOp() {
+    if (useMemcached) {
+      memcached.set("just-wait", 10, 0).get()
+    }
+  }
+
+  def putIntoCache(fileVersionId: Long, fingerprint: TextFingerprintArrays) = {
+    if (useMemcached) {
+      val exp = (System.currentTimeMillis() / 1000L) + 365*24*60*60;
+      memcached.set("ffp" + fileVersionId, exp.toInt, fingerprint)
+    }
+    else {
+      fingerprintCache.put(fileVersionId, fingerprint)
+    }
+  }
+
+  def getFromCache(fileVersionId: Long) : Option[TextFingerprintArrays] = {
+    if (useMemcached) {
+      val obj = memcached.get("ffp" + fileVersionId)
+      if (obj == null)
+        None
+      else
+        obj match {
+          case fp: TextFingerprintArrays => Some(fp)
+          case _ => throw new ClassCastException
+        }
+    }
+    else {
+      val fp = fingerprintCache.get(fileVersionId)
+      if (fp == null)
+        None
+      else
+        Some(fp)
+    }
+  }
 }
