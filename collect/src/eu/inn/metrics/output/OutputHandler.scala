@@ -48,4 +48,6 @@ trait OutputHandler {
   def repositaryUrl(url: String)
 
   def commit(c: RepositaryCommit) : Boolean
+
+  def shutdown()
 }

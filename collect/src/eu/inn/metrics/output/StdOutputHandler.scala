@@ -72,5 +72,7 @@ class StdOutputHandler extends OutputHandler {
     progress = percent
   }
 
+  def shutdown() {}
+
   def fetchTypeList(ftl: FileTypeList) {}
 }

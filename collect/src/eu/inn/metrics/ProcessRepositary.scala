@@ -46,33 +46,38 @@ class ProcessRepositary (config: CollectMetricsConfig, outputHandler : OutputHan
     outputHandler.repositaryUrl(git.originUrl())
     outputHandler.fetchTypeList(fileTypeList)
 
-    if (!config.onlyInit) {
-      val log = git.fetchCommitLog()
-      val size = log.size
-      var i = 0
+    try {
+      if (!config.onlyInit) {
+        val log = git.fetchCommitLog()
+        val size = log.size
+        var i = 0
 
-      outputHandler.setProgress(i, size)
-      for (r <- log) {
-        if (outputHandler.commit(r)) {
-          if (r.commitType == RepositaryCommitType.NORMAL) {
-
-            val metrics = git.fetchCommitMetrics(r,
-              (fileName: String, oldFileName: String, newFileName: String) =>
-              {
-                outputHandler.processingFile(fileName, oldFileName, newFileName)
-                val dw = new DiffWrapper(config.clocCmd, fileTypeList, config.clocFileSizeLimit)
-                dw.getMetrics(fileName, oldFileName, newFileName)
-              }
-            )
-
-            for (m <- metrics)
-              outputHandler.fileMetrics(m)
-          }
-        }
-
-        i += 1
         outputHandler.setProgress(i, size)
+        for (r <- log) {
+          if (outputHandler.commit(r)) {
+            if (r.commitType == RepositaryCommitType.NORMAL) {
+
+              val metrics = git.fetchCommitMetrics(r,
+                (fileName: String, oldFileName: String, newFileName: String) =>
+                {
+                  outputHandler.processingFile(fileName, oldFileName, newFileName)
+                  val dw = new DiffWrapper(config.clocCmd, fileTypeList, config.clocFileSizeLimit)
+                  dw.getMetrics(fileName, oldFileName, newFileName)
+                }
+              )
+
+              for (m <- metrics)
+                outputHandler.fileMetrics(m)
+            }
+          }
+
+          i += 1
+          outputHandler.setProgress(i, size)
+        }
       }
+    }
+    finally {
+      outputHandler.shutdown()
     }
   }
 }

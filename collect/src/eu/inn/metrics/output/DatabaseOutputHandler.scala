@@ -455,6 +455,8 @@ class DatabaseOutputHandler(url: String, driver: String, force: Boolean)
     waitForCacheOp()
   }
 
+  def shutdown = shutdownCache()
+
   final val fingerprintCacheSize = 256000
 
   lazy val fingerprintCache = {
@@ -504,6 +506,12 @@ class DatabaseOutputHandler(url: String, driver: String, force: Boolean)
   def waitForCacheOp() {
     if (useMemcached) {
       memcached.set("just-wait", 10, 0).get()
+    }
+  }
+
+  def shutdownCache() {
+    if (useMemcached) {
+      memcached.shutdown()
     }
   }
 
