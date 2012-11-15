@@ -240,6 +240,7 @@ create table commt
     commt_type smallint not null,
     dt timestamptz not null,
     exclude boolean not null default false,
+    processed boolean not null default false,
     constraint pk_commt primary key (commt_id),
     constraint fk_commt__project foreign key (project_id) references project(project_id),
     constraint fk_commt__author foreign key (author_id) references author(author_id),

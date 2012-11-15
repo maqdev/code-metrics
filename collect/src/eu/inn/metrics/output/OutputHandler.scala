@@ -47,7 +47,9 @@ trait OutputHandler {
 
   def repositaryUrl(url: String)
 
-  def commit(c: RepositaryCommit) : Boolean
+  def commitStarted(c: RepositaryCommit) : Boolean
+
+  def commitFinished(c: RepositaryCommit)
 
   def shutdown()
 }

@@ -41,10 +41,14 @@ class StdOutputHandler extends OutputHandler {
     println("Found repositary: " + url)
   }
 
-  def commit(c: RepositaryCommit) = {
+  def commitStarted(c: RepositaryCommit) = {
     println("-------------------------------")
     println("" + c.dt + " " + c.commitType + " " + c.name + " " + c.email + " " + c.hash)
     true
+  }
+
+  def commitFinished(c: RepositaryCommit) = {
+    println("... processed commit " + c.hash)
   }
 
   def gitVersion(version: GitVersion) {

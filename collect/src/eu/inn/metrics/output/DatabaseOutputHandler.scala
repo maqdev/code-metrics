@@ -130,7 +130,7 @@ class DatabaseOutputHandler(url: String, driver: String, force: Boolean)
     if (r.isDefined)
       return r.get
 
-    val id = SQL("insert into metric_type(name) values({name}").on("name"->metricTypeName).executeInsert().get.toInt
+    val id = SQL("insert into metric_type(name) values({name})").on("name"->metricTypeName).executeInsert().get.toInt
     metricTypeMap += (metricTypeName -> id)
     return id
   }
@@ -193,22 +193,26 @@ class DatabaseOutputHandler(url: String, driver: String, force: Boolean)
   var currentCommitId : Option[Long] = None
   var currentCommitDt : Option[Date] = None
 
-  def commit(c: RepositaryCommit) : Boolean = {
+  def commitStarted(c: RepositaryCommit) : Boolean = {
     println("-------------------------------")
     println("" + c.dt + " " + c.commitType + " " + c.name + " " + c.email + " " + c.hash)
 
     val authorId = getAuthorId(c.name, c.email)
 
-    val q = SQL("select commt_id from commt where hash={hash}").on("hash"->c.hash).apply()
-    val cmt = if (q.isEmpty) None else q.head[Option[Long]]("commt_id")
+    val q = SQL("select commt_id, processed from commt where hash={hash}").on("hash"->c.hash).apply()
+    val (cmt,processed) = if (q.isEmpty) (None,false) else (q.head[Option[Long]]("commt_id"),q.head[Boolean]("processed"))
 
-    if (cmt.isDefined && !force) {
+    if (cmt.isDefined && !force && processed) {
       println("Commit already processed")
       return false
     }
     else {
 
       if (cmt.isDefined) {
+        if (!processed) {
+          println("Removing incomplete commit #" + cmt.get)
+        }
+
         // remove existing metrics
         println("Removing existing metrics for commit " + c.hash + " #" + cmt.get + "...")
         SQL("delete from metric where commt_id={commt_id}").on("commt_id"->cmt.get).execute
@@ -237,6 +241,11 @@ class DatabaseOutputHandler(url: String, driver: String, force: Boolean)
       currentCommitDt = Some(c.dt.toDate)
       return true
     }
+  }
+
+  def commitFinished(c: RepositaryCommit) {
+    println("... processed commit " + c.hash)
+    SQL("update commt set processed = true where commt_id={commt_id}").on("commt_id"->currentCommitId.get).execute
   }
 
   def gitVersion(version: GitVersion) {

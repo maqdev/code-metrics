@@ -54,7 +54,7 @@ class ProcessRepositary (config: CollectMetricsConfig, outputHandler : OutputHan
 
         outputHandler.setProgress(i, size)
         for (r <- log) {
-          if (outputHandler.commit(r)) {
+          if (outputHandler.commitStarted(r)) {
             if (r.commitType == RepositaryCommitType.NORMAL) {
 
               val metrics = git.fetchCommitMetrics(r,
@@ -69,6 +69,7 @@ class ProcessRepositary (config: CollectMetricsConfig, outputHandler : OutputHan
               for (m <- metrics)
                 outputHandler.fileMetrics(m)
             }
+            outputHandler.commitFinished(r)
           }
 
           i += 1
