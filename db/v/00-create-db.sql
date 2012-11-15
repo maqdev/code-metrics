@@ -173,6 +173,7 @@ create table author
 (
     author_id int,
     name varchar(120) not null,
+    exclude boolean default false,
     constraint pk_author primary key (author_id)
 );
 
@@ -212,6 +213,7 @@ create table file
     file_type_id int not null,
     file_category_id int null,
     path varchar(4096) not null,
+    exclude boolean default false,
     constraint pk_file primary key (file_id),
     constraint fk_file__project foreign key (project_id) references project(project_id),
     constraint fk_file__file_type foreign key (file_type_id) references file_type(file_type_id),

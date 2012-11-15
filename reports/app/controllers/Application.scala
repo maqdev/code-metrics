@@ -62,7 +62,7 @@ object Application extends Controller {
         |select a.*, aa.email
         |from author a
         |join author_alias aa on (a.author_id = aa.author_id)
-        |where exists (select author_id from commt c where c.author_id = a.author_id)
+        |where exists (select author_id from commt c where c.author_id = a.author_id)and not a.exclude
         |order by a.name
       """.stripMargin
 
@@ -105,6 +105,7 @@ object Application extends Controller {
         |and not c.exclude
         |and not ft.exclude
         |and not coalesce(fc.exclude, false)
+        |and not f.exclude
         |group by period, ft.name, project_name, mt
         |order by period
       """.stripMargin
@@ -196,6 +197,8 @@ object Application extends Controller {
         |where (mt.name in ('!= loc', '+ loc'))
         |and not c.exclude
         |and not ft.exclude
+        |and not a.exclude
+        |and not f.exclude
         |and not coalesce(fc.exclude, false)
         |group by period, ft.name, a.name, mt
         |order by period
@@ -229,7 +232,7 @@ object Application extends Controller {
     val query =
       """
         |select p.name project_name, c.hash, c.dt, c.exclude, f.path, fc.name as file_category,
-        |(ft.exclude or coalesce(fc.exclude, false)) file_exclude, mt.name as mt, sum(m.value) mt_val,
+        |(f.exclude or ft.exclude or coalesce(fc.exclude, false)) file_exclude, mt.name as mt, sum(m.value) mt_val,
         |fv.similarity, fv.is_new
         |from commt c
         |join metric m on (c.commt_id = m.commt_id)
