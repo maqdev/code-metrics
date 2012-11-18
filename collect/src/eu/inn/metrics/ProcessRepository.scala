@@ -31,4 +31,54 @@
 
 package eu.inn.metrics
 
-case class RepositaryCommit(hash: String, name: String, email: String, commitType: RepositaryCommitType.Value, dt: org.joda.time.DateTime)
+import diff.DiffWrapper
+import output.OutputHandler
+import eu.inn.metrics.shell.{RepositoryOperations}
+
+class ProcessRepository (config: CollectMetricsConfig, outputHandler : OutputHandler) {
+
+  def run() {
+    val git = new RepositoryOperations(config)
+
+    outputHandler.gitVersion(git.gitVersion())
+    val fileTypeList = new FileTypeList(config.fileCategoryRegexPath, config.clocCmd)
+
+    outputHandler.repositaryUrl(git.originUrl())
+    outputHandler.fetchTypeList(fileTypeList)
+
+    try {
+      if (!config.onlyInit) {
+        val log = git.fetchCommitLog(config)
+        val size = log.size
+        var i = 0
+
+        outputHandler.setProgress(i, size)
+        for (r <- log) {
+          if (outputHandler.commitStarted(r)) {
+            if (r.commitType == RepositoryCommitType.NORMAL) {
+
+              val metrics = git.fetchCommitMetrics(r,
+                (fileName: String, oldFileName: String, newFileName: String) =>
+                {
+                  outputHandler.processingFile(fileName, oldFileName, newFileName)
+                  val dw = new DiffWrapper(config.clocCmd, fileTypeList, config.clocFileSizeLimit)
+                  dw.getMetrics(fileName, oldFileName, newFileName)
+                }
+              )
+
+              for (m <- metrics)
+                outputHandler.fileMetrics(m)
+            }
+            outputHandler.commitFinished(r)
+          }
+
+          i += 1
+          outputHandler.setProgress(i, size)
+        }
+      }
+    }
+    finally {
+      outputHandler.shutdown()
+    }
+  }
+}

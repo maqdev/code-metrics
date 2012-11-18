@@ -69,6 +69,10 @@ object CollectMetrics {
             (v: String, c: CollectMetricsConfig) => c.copy(clocFileSizeLimit = Some(v.toInt))
           } ,
 
+          opt("h", "hash", "commit hash list to process" ) {
+            (v: String, c: CollectMetricsConfig) => c.copy(processHashList = v.split(",").toSet)
+          } ,
+
           arg("<repositary_path>", "local path to git repositary directory") { (v: String, c: CollectMetricsConfig)
             => c.copy(inputDirectory = v) }
 
@@ -91,7 +95,7 @@ object CollectMetrics {
               new DatabaseOutputHandler(v(0), v(1), config.force)
             }
 
-            val r = new ProcessRepositary(config, o)
+            val r = new ProcessRepository(config, o)
             r.run()
           }
       } getOrElse {

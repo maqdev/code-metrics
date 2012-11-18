@@ -31,7 +31,7 @@
 
 package eu.inn.metrics.output
 
-import eu.inn.metrics.{FileTypeList, RepositaryCommit, FileMetrics}
+import eu.inn.metrics.{FileTypeList, RepositoryCommit, FileMetrics}
 import eu.inn.metrics.shell.{GitVersion}
 
 trait OutputHandler {
@@ -47,9 +47,9 @@ trait OutputHandler {
 
   def repositaryUrl(url: String)
 
-  def commitStarted(c: RepositaryCommit) : Boolean
+  def commitStarted(c: RepositoryCommit) : Boolean
 
-  def commitFinished(c: RepositaryCommit)
+  def commitFinished(c: RepositoryCommit)
 
   def shutdown()
 }

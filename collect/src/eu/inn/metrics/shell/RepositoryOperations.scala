@@ -40,8 +40,9 @@ import eu.inn.metrics._
 import eu.inn.metrics.CollectMetricsConfig
 import eu.inn.metrics.FileMetrics
 import scala.Some
+import eu.inn.metrics.RepositoryCommit
 
-class RepositaryOperations(config: CollectMetricsConfig) extends ProcessCommandBase(config.inputDirectory, "git") {
+class RepositoryOperations(config: CollectMetricsConfig) extends ProcessCommandBase(config.inputDirectory, "git") {
 
   def gitVersion() = {
     var version = GitVersion(0, 0, 0, 0)
@@ -88,7 +89,7 @@ class RepositaryOperations(config: CollectMetricsConfig) extends ProcessCommandB
     result
   }
 
-  def fetchCommitLog(): Seq[RepositaryCommit] = {
+  def fetchCommitLog(config: CollectMetricsConfig): Seq[RepositoryCommit] = {
 
     /*
     executed command:
@@ -101,7 +102,7 @@ class RepositaryOperations(config: CollectMetricsConfig) extends ProcessCommandB
     val regx: Regex = """(.*); (.*); (.*); (.*); (.*)?;""".r
     var unparsedOutput = ""
 
-    var result = mutable.MutableList[RepositaryCommit]()
+    var result = mutable.MutableList[RepositoryCommit]()
 
     val fmt = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss Z")
 
@@ -112,11 +113,15 @@ class RepositaryOperations(config: CollectMetricsConfig) extends ProcessCommandB
         val parent_hashes = o.get.group(5).split(" ")
 
         val commitType = if (parent_hashes.length == 2 && parent_hashes(0) != parent_hashes(1) && !parent_hashes(1).isEmpty)
-          RepositaryCommitType.MERGE
+          RepositoryCommitType.MERGE
         else
-          RepositaryCommitType.NORMAL
+          RepositoryCommitType.NORMAL
 
-        result += RepositaryCommit(o.get.group(1), o.get.group(2), o.get.group(3), commitType, dt)
+        var commit = RepositoryCommit(o.get.group(1), o.get.group(2), o.get.group(3), commitType, dt)
+
+        if (config.processHashList.isEmpty || config.processHashList.contains(commit.hash)) {
+          result += commit
+        }
       }
       else {
         unparsedOutput += s + eol
@@ -132,7 +137,7 @@ class RepositaryOperations(config: CollectMetricsConfig) extends ProcessCommandB
     result.toSeq
   }
 
-  def fetchCommitMetrics(commit: RepositaryCommit, getMetrics: (String, String, String) => FileMetrics): Seq[FileMetrics] = {
+  def fetchCommitMetrics(commit: RepositoryCommit, getMetrics: (String, String, String) => FileMetrics): Seq[FileMetrics] = {
     val regxFirstLine: Regex = """(.*);""".r
     var unparsedOutput = ""
     var hash = ""

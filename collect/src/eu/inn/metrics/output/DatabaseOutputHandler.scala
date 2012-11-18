@@ -193,7 +193,7 @@ class DatabaseOutputHandler(url: String, driver: String, force: Boolean)
   var currentCommitId : Option[Long] = None
   var currentCommitDt : Option[Date] = None
 
-  def commitStarted(c: RepositaryCommit) : Boolean = {
+  def commitStarted(c: RepositoryCommit) : Boolean = {
     println("-------------------------------")
     println("" + c.dt + " " + c.commitType + " " + c.name + " " + c.email + " " + c.hash)
 
@@ -243,7 +243,7 @@ class DatabaseOutputHandler(url: String, driver: String, force: Boolean)
     }
   }
 
-  def commitFinished(c: RepositaryCommit) {
+  def commitFinished(c: RepositoryCommit) {
     println("... processed commit " + c.hash)
     SQL("update commt set processed = true where commt_id={commt_id}").on("commt_id"->currentCommitId.get).execute
   }

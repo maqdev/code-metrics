@@ -33,13 +33,22 @@ package eu.inn.metrics.shell
 
 import sys.process.{ProcessIO, Process}
 import scala.{Some, None, Seq}
-import java.io.OutputStream
+import java.io.{InputStreamReader, OutputStream}
 import concurrent.SyncVar
+import java.nio.charset.{Charset, CodingErrorAction}
+import io.Codec
 
 abstract class ProcessCommandBase(workDirectory: String, commandName: String) {
   val eol = sys.props("line.separator")
 
   protected def run(args: Seq[String], f: String => Unit, os: Option[SyncVar[OutputStream]], extraEnv: (String, String)*) {
+
+    val decoder = Charset.forName("UTF-8").newDecoder();
+    decoder.onMalformedInput(CodingErrorAction.REPLACE);
+    decoder.onUnmappableCharacter(CodingErrorAction.REPLACE);
+    decoder.replaceWith("?");
+
+    implicit val codec = Codec.decoder2codec(decoder)
 
     var errorLines: String = ""
 

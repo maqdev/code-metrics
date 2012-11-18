@@ -36,4 +36,5 @@ case class CollectMetricsConfig(inputDirectory: String, diffwrapperCmd: String =
                                 outputDb: String = "",
                                 onlyInit: Boolean = false,
                                 force: Boolean = false,
-                                clocFileSizeLimit: Option[Int] = Some(1024*1024))
+                                clocFileSizeLimit: Option[Int] = Some(1024*1024),
+                                processHashList: Set[String] = Set())

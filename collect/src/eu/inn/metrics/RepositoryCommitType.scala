@@ -31,7 +31,7 @@
 
 package eu.inn.metrics
 
-object RepositaryCommitType extends Enumeration {
+object RepositoryCommitType extends Enumeration {
   val NORMAL = Value(1)
   val MERGE = Value(2)
 }

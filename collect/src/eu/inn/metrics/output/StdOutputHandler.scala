@@ -31,7 +31,7 @@
 
 package eu.inn.metrics.output
 
-import eu.inn.metrics.{FileTypeList, RepositaryCommit, FileMetrics}
+import eu.inn.metrics.{FileTypeList, RepositoryCommit, FileMetrics}
 import eu.inn.metrics.shell.{GitVersion}
 
 class StdOutputHandler extends OutputHandler {
@@ -41,13 +41,13 @@ class StdOutputHandler extends OutputHandler {
     println("Found repositary: " + url)
   }
 
-  def commitStarted(c: RepositaryCommit) = {
+  def commitStarted(c: RepositoryCommit) = {
     println("-------------------------------")
     println("" + c.dt + " " + c.commitType + " " + c.name + " " + c.email + " " + c.hash)
     true
   }
 
-  def commitFinished(c: RepositaryCommit) = {
+  def commitFinished(c: RepositoryCommit) = {
     println("... processed commit " + c.hash)
   }
 
