@@ -51,5 +51,7 @@ trait OutputHandler {
 
   def commitFinished(c: RepositoryCommit)
 
+  def getAllKnownFiles(): Set[String]
+
   def shutdown()
 }

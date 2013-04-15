@@ -144,6 +144,8 @@ class DatabaseOutputHandler(url: String, driver: String, force: Boolean)
     m
   }
 
+  def getAllKnownFiles() = fileMap.keySet.toSet
+
   def fixFileCategory(path: String, r: (Int, Option[Int]), fileCategoryId: Option[Int], fileCategoryName: Option[String]){
     if (r._2 != fileCategoryId) {
       println("Updating category for file: " + path + " to " + fileCategoryName)
@@ -337,7 +339,7 @@ class DatabaseOutputHandler(url: String, driver: String, force: Boolean)
 
     SQL(
       """
-        |select fc.file_category_id, fc.name, fc.regex, fc.diff_handler, fc.cloc_language, fc.priority
+        |select fc.file_category_id, fc.name, fc.regex, fc.diff_handler, fc.cloc_language, fc.priority, fc.generated_from
         |from file_category fc
         |where coalesce(fc.project_id, {project_id}) = {project_id}
         |order by fc.priority
@@ -350,6 +352,7 @@ class DatabaseOutputHandler(url: String, driver: String, force: Boolean)
       val regex = r[String]("regex")
       val diffHandler = r[Option[String]]("diff_handler")
       val clocLanguage = r[Option[String]]("cloc_language")
+      val generatedFrom = r[Option[String]]("generated_from")
       val priority = r[Int]("priority")
 
       ftl.append(FileCategoryRegex(name, new Regex(regex), priority,
@@ -357,17 +360,21 @@ class DatabaseOutputHandler(url: String, driver: String, force: Boolean)
           case Some(x) => Some(DiffHandlerType.withName(x))
           case None => None
         },
-        clocLanguage
+        clocLanguage,
+        generatedFrom
       ))
       fileCategoryMap += (name -> fileCategoryId)
     }
 
     println("Updating categories for the files...")
     for ((key,value) <- fileMap) {
-      val ft = ftl.getFileType(key)
+      val ft = ftl.getFileType(key, fileMap.keySet)
       if (ft.category.isDefined) {
         val fileCategoryId = getFileCategoryId(ft.category.get)
         fixFileCategory(key, value, fileCategoryId, ft.category)
+      }
+      else {
+        fixFileCategory(key, value, None, ft.category)
       }
     }
   }

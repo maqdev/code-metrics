@@ -35,4 +35,4 @@ import diff.DiffHandlerType
 import scala.Predef.String
 import util.matching.Regex
 
-case class FileCategoryRegex(category: String, regex: Regex, priority: Int, diffHandlerType: Option[DiffHandlerType.Value], language: Option[String])
+case class FileCategoryRegex(category: String, regex: Regex, priority: Int, diffHandlerType: Option[DiffHandlerType.Value], language: Option[String], generatedFrom: Option[String])

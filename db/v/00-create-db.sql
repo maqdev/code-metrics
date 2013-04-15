@@ -152,6 +152,7 @@ create table file_category
     priority int not null,
     diff_handler varchar(120) null,
     cloc_language varchar(120) null,
+    generated_from varchar(120) null,
     exclude boolean not null default false,
    	constraint pk_file_category primary key (file_category_id),
     constraint fk_file_category__project foreign key (project_id) references project(project_id)

@@ -66,6 +66,7 @@ class StdOutputHandler extends OutputHandler {
 
   def processingFile(fileName: String, oldFileName: String, newFileName: String) {
     println("Processing file " + fileName + "...")
+    fileMap.+(fileName)
   }
 
   def setProgress(current: Int, maximum: Int) {
@@ -79,4 +80,8 @@ class StdOutputHandler extends OutputHandler {
   def shutdown() {}
 
   def fetchTypeList(ftl: FileTypeList) {}
+
+  val fileMap = scala.collection.mutable.Set[String]()
+
+  def getAllKnownFiles() = fileMap.toSet
 }
